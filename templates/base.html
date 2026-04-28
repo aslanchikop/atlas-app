@@ -57,6 +57,8 @@
       <li><a href="/analysis?lang={{ lang }}"     class="{% if request.path == '/analysis' %}active{% endif %}">{% if lang == 'en' %}Analysis{% else %}Талдау{% endif %}</a></li>
       <li><a href="/encyclopedia?lang={{ lang }}" class="{% if request.path == '/encyclopedia' %}active{% endif %}">{% if lang == 'en' %}Reference{% else %}Анықтама{% endif %}</a></li>
       <li><a href="/about?lang={{ lang }}"        class="{% if request.path == '/about' %}active{% endif %}">{% if lang == 'en' %}About{% else %}Туралы{% endif %}</a></li>
+      <li><a href="/explore?tab=news&lang={{ lang }}"    class="{% if request.path == '/explore' and request.args.get('tab') == 'news' %}active{% endif %}">{% if lang == 'en' %}News{% else %}Жаңалықтар{% endif %}</a></li>
+      <li><a href="/explore?tab=nasaeyes&lang={{ lang }}" class="{% if request.path == '/explore' and request.args.get('tab') == 'nasaeyes' %}active{% endif %}">🌌 NASA Eyes</a></li>
     </ul>
 
     <div class="nav-right">
@@ -100,7 +102,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- ── Auth Modal ─────────────────────────────────────────── -->
-<div class="auth-overlay" id="authOverlay">
+<div class="auth-overlay hidden" id="authOverlay" style="display:none">
   <div class="auth-card" id="authCard">
     <div class="auth-stars">✦ ✧ ✦</div>
     <div class="auth-logo">🛰️</div>
@@ -1184,10 +1186,9 @@
   const users = getUsers();
   if (cur && users.find(u => u.username === cur)) {
     const u = users.find(x => x.username === cur);
-    // Auto-login silently
-    doLogin(u.username, u.avatar);
+    doLogin(u.username, u.avatar);   // stays hidden, no flash
   } else {
-    showModal();
+    setTimeout(showModal, 80);       // small delay avoids layout flash
   }
 })();
 </script>

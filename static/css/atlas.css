@@ -3203,3 +3203,44 @@ img { max-width: 100%; }
   transition: color 0.15s ease;
 }
 .model-link:hover { color: var(--accent-light); }
+
+/* ── Mobile responsive ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .navbar { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
+  .nav-links { display: none; flex-direction: column; width: 100%; gap: 4px; }
+  .nav-links.nav-open { display: flex; }
+  .nav-links li a { padding: 10px 12px; display: block; border-radius: 8px; }
+  .nav-right { gap: 6px; flex-wrap: wrap; }
+  .nav-search-label, .nav-search-kbd { display: none; }
+  .nav-user-name { max-width: 60px; }
+
+  .page-content { padding: 12px; }
+  .page-header { flex-direction: column; gap: 12px; }
+  .page-title { font-size: 2rem; }
+
+  .bento-grid.bento-2,
+  .bento-grid.bento-3 { grid-template-columns: 1fr !important; }
+
+  /* Explore missions grid */
+  [style*="grid-template-columns:280px 1fr 300px"] {
+    display: flex !important; flex-direction: column !important; gap: 12px !important;
+  }
+  [style*="grid-template-columns:280px 1fr 300px"] > * { width: 100% !important; }
+
+  .step-grid { grid-template-columns: 1fr 1fr !important; }
+
+  .tab-nav { gap: 4px; flex-wrap: wrap; }
+  .tab-btn { font-size: 0.72rem; padding: 6px 10px; }
+
+  /* Laika chat panel */
+  .lk-panel { width: calc(100vw - 24px); right: 12px; bottom: 180px; }
+
+  /* Floating terminal */
+  #scanTerminal { width: 94vw !important; bottom: 16px !important; }
+
+  /* Auth card */
+  .auth-card { padding: 24px 18px 20px; }
+
+  /* Hud status strip */
+  .hud-status-strip { font-size: 0.65rem; gap: 6px; flex-wrap: wrap; }
+}
