@@ -835,12 +835,16 @@
           <p class="page-subtitle-hud">{% if lang == 'en' %}Latest Updates{% else %}Соңғы Жаңалықтар{% endif %}</p>
           <h2 style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--text)">{% if lang == 'en' %}Exoplanet News{% else %}Экзопланета Жаңалықтары{% endif %}</h2>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap" id="newsFilterBtns">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center" id="newsFilterBtns">
           <button class="sort-btn active" onclick="filterNews('all', this)">All</button>
           <button class="sort-btn" onclick="filterNews('discovery', this)">Discovery</button>
           <button class="sort-btn" onclick="filterNews('research', this)">Research</button>
           <button class="sort-btn" onclick="filterNews('mission', this)">Mission</button>
           <button class="sort-btn" onclick="filterNews('jwst', this)">JWST</button>
+          <button class="sort-btn" id="newsRefreshBtn" onclick="refreshNews()" style="margin-left:8px;background:rgba(212,165,116,0.1);border-color:rgba(212,165,116,0.3);color:var(--accent)" title="Refresh">
+            <span id="newsRefreshIcon">↺</span> {% if lang == 'en' %}Refresh{% else %}Жаңарту{% endif %}
+          </button>
+          <span id="newsLastUpdate" style="font-size:0.68rem;color:var(--text-faint)"></span>
         </div>
       </div>
     </div>
@@ -993,6 +997,26 @@
 
     </div>
 
+  </div>
+
+  <!-- ── News article modal ─────────────────────────────── -->
+  <div id="newsModal" style="display:none;position:fixed;inset:0;z-index:99990;
+       background:rgba(4,2,16,0.88);backdrop-filter:blur(12px);
+       display:none;align-items:center;justify-content:center;padding:20px">
+    <div style="background:rgba(14,10,32,0.98);border:1px solid rgba(212,165,116,0.25);
+         border-radius:20px;max-width:680px;width:100%;max-height:85vh;
+         overflow-y:auto;padding:32px;position:relative;
+         box-shadow:0 24px 80px rgba(0,0,0,0.7)">
+      <button onclick="closeNewsModal()" style="position:absolute;top:16px;right:18px;
+              background:none;border:none;color:rgba(200,190,255,0.45);
+              font-size:20px;cursor:pointer;line-height:1">✕</button>
+      <div id="newsModalBadges" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <h2 id="newsModalTitle" style="font-family:'Space Grotesk',sans-serif;font-size:1.4rem;
+           font-weight:700;color:#f2f4ff;line-height:1.35;margin-bottom:14px"></h2>
+      <p id="newsModalMeta" style="font-size:0.72rem;color:rgba(200,190,160,0.6);margin-bottom:18px"></p>
+      <div id="newsModalBody" style="font-size:0.88rem;color:rgba(220,218,240,0.82);
+           line-height:1.75;border-top:1px solid rgba(255,255,255,0.07);padding-top:18px"></div>
+    </div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════
@@ -1323,7 +1347,8 @@ async function scanStar(starName) {
   hideTerminal();
   if (!_autoScanMode) {
     switchTab('system');
-    setTimeout(() => location.reload(), 2500);
+    if (window._atlasSave) await window._atlasSave();
+    setTimeout(() => location.reload(), 1200);
   } else {
     _autoDone++;
     _autoFound += pl.length;
@@ -1878,6 +1903,55 @@ function filterNews(category, btn) {
     }
   });
 }
+
+// ── News modal ────────────────────────────────────────────
+function openNewsModal(card) {
+  const title  = card.querySelector('h3,h4')?.textContent?.trim() || '';
+  const body   = card.querySelector('p')?.textContent?.trim() || '';
+  const meta   = card.querySelector('[style*="text-faint"]')?.textContent?.trim() || '';
+  const badges = [...card.querySelectorAll('.badge')].map(b => b.outerHTML).join('');
+  document.getElementById('newsModalTitle').textContent  = title;
+  document.getElementById('newsModalBody').textContent   = body;
+  document.getElementById('newsModalMeta').textContent   = meta;
+  document.getElementById('newsModalBadges').innerHTML   = badges;
+  const m = document.getElementById('newsModal');
+  m.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeNewsModal() {
+  document.getElementById('newsModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.getElementById('newsModal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('newsModal')) closeNewsModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNewsModal(); });
+
+// Make all news cards clickable
+document.querySelectorAll('.news-card').forEach(card => {
+  card.style.cursor = 'pointer';
+  card.addEventListener('click', () => openNewsModal(card));
+});
+
+// ── News refresh ──────────────────────────────────────────
+let _newsRefreshTimer = null;
+function refreshNews() {
+  const icon = document.getElementById('newsRefreshIcon');
+  const lbl  = document.getElementById('newsLastUpdate');
+  if (icon) { icon.style.animation = 'spin 0.8s linear infinite'; }
+  setTimeout(() => {
+    if (icon) icon.style.animation = '';
+    const now = new Date();
+    if (lbl) lbl.textContent = `Updated ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+    showToast(_kz ? 'Жаңалықтар жаңартылды ✓' : 'News refreshed ✓', 'success');
+  }, 900);
+}
+// Auto-refresh every 10 minutes
+_newsRefreshTimer = setInterval(refreshNews, 10 * 60 * 1000);
+// Show initial timestamp
+(function(){ const lbl = document.getElementById('newsLastUpdate');
+  if(lbl){ const n=new Date(); lbl.textContent=`Updated ${n.getHours()}:${String(n.getMinutes()).padStart(2,'0')}`; }
+})();
 
 // ── 3D Model filter ──────────────────────────────────────────
 function filterModels(btn, category) {

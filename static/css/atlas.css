@@ -7,35 +7,35 @@
 
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
-  --bg:            #0c0d18;
-  --bg-2:          #11122a;
-  --surface:       rgba(255,255,255,0.030);
-  --glass:         rgba(18,20,42,0.72);
-  --glass-hover:   rgba(26,29,56,0.82);
-  --glass-active:  rgba(32,36,66,0.90);
-  --border:        rgba(255,255,255,0.08);
-  --border-light:  rgba(255,255,255,0.14);
-  --border-accent: rgba(212,165,116,0.28);
+  --bg:            #0f1020;
+  --bg-2:          #151630;
+  --surface:       rgba(255,255,255,0.055);
+  --glass:         rgba(22,25,52,0.80);
+  --glass-hover:   rgba(30,34,65,0.88);
+  --glass-active:  rgba(38,43,78,0.95);
+  --border:        rgba(255,255,255,0.11);
+  --border-light:  rgba(255,255,255,0.18);
+  --border-accent: rgba(212,165,116,0.35);
 
-  --accent:        #d4a574;
-  --accent-light:  #e8c49a;
-  --accent-dim:    rgba(212,165,116,0.14);
-  --accent-glow:   rgba(212,165,116,0.22);
-  --accent-dark:   #b8854e;
+  --accent:        #dbb07e;
+  --accent-light:  #eccc9e;
+  --accent-dim:    rgba(219,176,126,0.18);
+  --accent-glow:   rgba(219,176,126,0.28);
+  --accent-dark:   #c4925a;
 
-  --green:         #6dba6d;
-  --green-dim:     rgba(109,186,109,0.13);
-  --blue:          #60a5fa;
-  --blue-dim:      rgba(96,165,250,0.13);
-  --red:           #f87171;
-  --red-dim:       rgba(248,113,113,0.13);
-  --yellow:        #fbbf24;
-  --purple:        #a78bfa;
+  --green:         #7dcf7d;
+  --green-dim:     rgba(125,207,125,0.16);
+  --blue:          #74b4fc;
+  --blue-dim:      rgba(116,180,252,0.16);
+  --red:           #fa8585;
+  --red-dim:       rgba(250,133,133,0.15);
+  --yellow:        #fcc93a;
+  --purple:        #b89dfc;
 
-  --text:            #eef0fc;
-  --text-secondary:  rgba(238,240,252,0.78);
-  --text-muted:      rgba(238,240,252,0.48);
-  --text-faint:      rgba(238,240,252,0.28);
+  --text:            #f2f4ff;
+  --text-secondary:  rgba(242,244,255,0.84);
+  --text-muted:      rgba(242,244,255,0.58);
+  --text-faint:      rgba(242,244,255,0.40);
 
   --blur-sm:  blur(10px) saturate(150%);
   --blur-md:  blur(20px) saturate(180%);
@@ -518,6 +518,7 @@ img { max-width: 100%; }
   font-size: clamp(5.5rem, 12vw, 10rem);
   font-weight: 800;
   letter-spacing: 20px;
+  padding-right: 20px;
   line-height: 0.9;
   margin-bottom: 32px;
   background: linear-gradient(160deg,

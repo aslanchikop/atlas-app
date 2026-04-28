@@ -1052,6 +1052,8 @@
       saveUserData(username, d);
     } catch {}
   }
+  // Expose globally so explore.js can await before reload
+  window._atlasSave = () => saveProgress(getCurrent());
 
   // ── Auto-save after key events ────────────────────────────
   const _f = window.fetch;

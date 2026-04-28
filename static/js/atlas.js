@@ -242,19 +242,33 @@ window.debounce     = debounce;
     }, 5000);
   }
 
-  // Fire first alert after 60–90s, then every 120–180s
+  const MAX_TOASTS = 3;
+
+  function canShow() {
+    if (document.hidden) return false;
+    return document.querySelectorAll('.toast-conspiracy.toast-show').length < MAX_TOASTS;
+  }
+
   function scheduleNext() {
     const delay = (120 + Math.random() * 60) * 1000;
     setTimeout(() => {
-      const alert = ALERTS[Math.floor(Math.random() * ALERTS.length)];
-      showConspiracyToast(alert);
+      if (canShow()) showConspiracyToast(ALERTS[Math.floor(Math.random() * ALERTS.length)]);
       scheduleNext();
     }, delay);
   }
 
+  // Clear stale toasts when user returns to tab
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      document.querySelectorAll('.toast-conspiracy').forEach(t => {
+        t.classList.remove('toast-show');
+        setTimeout(() => t.remove(), 350);
+      });
+    }
+  });
+
   setTimeout(() => {
-    const alert = ALERTS[Math.floor(Math.random() * ALERTS.length)];
-    showConspiracyToast(alert);
+    if (canShow()) showConspiracyToast(ALERTS[Math.floor(Math.random() * ALERTS.length)]);
     scheduleNext();
   }, (60 + Math.random() * 30) * 1000);
 })();
