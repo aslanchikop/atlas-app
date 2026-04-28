@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>ATLAS — {% if lang == 'en' %}Mission Report{% else %}Миссия Есебі{% endif %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --accent:#d4a574;--green:#4ade80;--blue:#60a5fa;--yellow:#fbbf24;--red:#f87171;
+      --bg:#06070f;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.08);
+      --text:#e8e8f0;--muted:#8888aa;--faint:#44445a;
+    }
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;
+      background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(212,165,116,0.08),transparent),
+                       radial-gradient(ellipse 60% 40% at 80% 60%,rgba(96,165,250,0.04),transparent);}
+    .wrap{max-width:480px;margin:0 auto;padding:20px 16px 48px}
+    /* Header */
+    .header{text-align:center;padding:28px 0 24px}
+    .header-icon{font-size:2.8rem;margin-bottom:10px}
+    .header-brand{font-family:'Space Grotesk',sans-serif;font-size:1.7rem;font-weight:800;
+      background:linear-gradient(135deg,#fff,rgba(212,165,116,0.9));-webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.5px}
+    .header-sub{font-size:0.78rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+    .header-date{font-size:0.70rem;color:var(--faint);margin-top:6px}
+    /* Status strip */
+    .strip{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+    .tag{font-size:0.62rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      padding:4px 10px;border:1px solid var(--border);border-radius:20px;color:var(--muted)}
+    .tag.live{border-color:rgba(74,222,128,0.3);color:var(--green);
+      background:rgba(74,222,128,0.08);display:flex;align-items:center;gap:4px}
+    .dot{width:5px;height:5px;border-radius:50%;background:var(--green);
+      box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    /* Cards */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;
+      padding:18px 20px;margin-bottom:12px;position:relative;overflow:hidden}
+    .card::before{content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(255,255,255,0.02),transparent);pointer-events:none}
+    .card-title{font-size:0.60rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+      color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .card-title::before{content:'';width:14px;height:1px;background:var(--accent);opacity:0.6}
+    /* Metric grid */
+    .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .metric{background:rgba(255,255,255,0.03);border:1px solid var(--border);
+      border-radius:12px;padding:14px 16px;text-align:center}
+    .metric-val{font-family:'Space Grotesk',sans-serif;font-size:2rem;font-weight:800;line-height:1;margin-bottom:4px}
+    .metric-label{font-size:0.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+    /* Planet rows */
+    .planet-row{display:flex;align-items:center;gap:12px;padding:11px 0;
+      border-bottom:1px solid rgba(255,255,255,0.04)}
+    .planet-row:last-child{border-bottom:none;padding-bottom:0}
+    .planet-rank{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.72rem;flex-shrink:0}
+    .rank-1{background:rgba(255,215,0,.15);color:#FFD700}
+    .rank-2{background:rgba(192,192,192,.15);color:#C0C0C0}
+    .rank-3{background:rgba(205,127,50,.15);color:#CD7F32}
+    .rank-other{background:rgba(255,255,255,0.05);color:var(--muted)}
+    .planet-info{flex:1;min-width:0}
+    .planet-name{font-size:0.86rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .planet-type{font-size:0.68rem;color:var(--muted)}
+    .score-pill{font-family:'Space Grotesk',sans-serif;font-size:0.78rem;font-weight:700;
+      padding:3px 10px;border-radius:20px;flex-shrink:0}
+    .s-high{background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3)}
+    .s-mid{background:rgba(251,191,36,0.12);color:var(--yellow);border:1px solid rgba(251,191,36,0.3)}
+    .s-low{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.3)}
+    .hz-badge{font-size:0.58rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+      padding:2px 7px;border-radius:20px;background:rgba(74,222,128,0.12);
+      color:var(--green);border:1px solid rgba(74,222,128,0.25);margin-left:6px}
+    /* Footer */
+    .footer{text-align:center;padding:24px 0 0;color:var(--faint);font-size:0.72rem;line-height:1.8}
+    .footer a{color:var(--accent);text-decoration:none}
+    /* Accent colors */
+    .c-accent{color:var(--accent)}.c-green{color:var(--green)}.c-blue{color:var(--blue)}.c-yellow{color:var(--yellow)}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">🛰️</div>
+    <div class="header-brand">ATLAS</div>
+    <div class="header-sub">{% if lang == 'en' %}Mission Intelligence Report{% else %}Миссия Барлаулық Есебі{% endif %}</div>
+    <div class="header-date">{{ data.created }}</div>
+  </div>
+
+  <!-- Status strip -->
+  <div class="strip">
+    <div class="tag live"><span class="dot"></span>{% if lang == 'en' %}LIVE DATA{% else %}ТІКЕЛЕЙ ДЕРЕКТЕР{% endif %}</div>
+    <div class="tag">ATLAS v21</div>
+    <div class="tag">NASA Exoplanet Archive</div>
+  </div>
+
+  <!-- Summary metrics -->
+  <div class="card">
+    <div class="card-title">{% if lang == 'en' %}Scan Summary{% else %}Сканерлеу Қорытындысы{% endif %}</div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-val c-accent">{{ data.systems }}</div>
+        <div class="metric-label">{% if lang == 'en' %}Systems{% else %}Жүйелер{% endif %}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val c-blue">{{ data.planets }}</div>
+        <div class="metric-label">{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val c-green">{{ data.hz_count }}</div>
+        <div class="metric-label">{% if lang == 'en' %}In HZ{% else %}МЖА-да{% endif %}</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val c-yellow">{{ data.avg_score }}<span style="font-size:1rem;opacity:.6">%</span></div>
+        <div class="metric-label">{% if lang == 'en' %}Avg Score{% else %}Орта ұпай{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top planets -->
+  <div class="card">
+    <div class="card-title">{% if lang == 'en' %}Top Candidates{% else %}Үздік Үміткерлер{% endif %}</div>
+    {% for p in data.top %}
+    <div class="planet-row">
+      <div class="planet-rank {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% else %}rank-other{% endif %}">{{ loop.index }}</div>
+      <div class="planet-info">
+        <div class="planet-name">
+          {{ p.name }}
+          {% if p.in_hz %}<span class="hz-badge">HZ</span>{% endif %}
+        </div>
+        <div class="planet-type">{{ p.type }} · ESI {{ "%.2f"|format(p.esi) }}</div>
+      </div>
+      <span class="score-pill {% if p.score >= 70 %}s-high{% elif p.score >= 40 %}s-mid{% else %}s-low{% endif %}">{{ "%.0f"|format(p.score) }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Habitability bar -->
+  <div class="card">
+    <div class="card-title">{% if lang == 'en' %}Habitability Overview{% else %}Тіршілік шолуы{% endif %}</div>
+    {% set hz_pct = (data.hz_count / data.planets * 100)|int if data.planets > 0 else 0 %}
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-bottom:6px">
+        <span>{% if lang == 'en' %}Habitable Zone Coverage{% else %}Тіршілік аймағы қамтуы{% endif %}</span>
+        <span class="c-green">{{ hz_pct }}%</span>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:{{ hz_pct }}%;background:linear-gradient(90deg,var(--green),#a8d5a8);border-radius:4px;transition:width 1s ease"></div>
+      </div>
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:8px">
+      {{ data.hz_count }} / {{ data.planets }} {% if lang == 'en' %}planets in habitable zone{% else %}планета тіршілік аймағында{% endif %}
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div style="margin-bottom:8px">🛰️ <strong style="color:var(--accent)">ATLAS</strong> — Autonomous Terrestrial Life Analysis System</div>
+    <div>{% if lang == 'en' %}Diploma Project 2024–2025 · NASA Exoplanet Archive{% else %}Диплом жобасы 2024–2025 · NASA Экзопланета мұрағаты{% endif %}</div>
+    <div style="margin-top:8px"><a href="/?lang={{ lang }}">{% if lang == 'en' %}Open ATLAS →{% else %}ATLAS-ты ашу →{% endif %}</a></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      {% if lang == 'en' %}Switch language:{% else %}Тіл ауыстыру:{% endif %}
+      {% if lang == 'en' %}
+        <a href="/analysis/share/{{ token }}?lang=kz">🇰🇿 KZ</a>
+      {% else %}
+        <a href="/analysis/share/{{ token }}?lang=en">🇬🇧 EN</a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

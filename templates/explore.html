@@ -1,0 +1,2022 @@
+{% extends "base.html" %}
+{% block title %}ATLAS — Explore{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="scan-sweep"></div>
+
+  <!-- HUD status strip -->
+  <div class="hud-status-strip">
+    <span class="hud-tag">ATLAS · Explore Module</span>
+    <span class="hud-tag-sep"></span>
+    <span class="hud-tag">Systems: <span id="hdr-systems" style="color:var(--accent)">{{ systems|length }}</span></span>
+    <span class="hud-tag-sep"></span>
+    <span class="hud-tag">Planets: <span id="hdr-planets" style="color:var(--accent)">{{ systems.values()|sum(attribute='planet_count') if systems else 0 }}</span></span>
+    <span class="hud-tag-sep"></span>
+    <span style="display:flex;align-items:center;gap:6px"><span class="status-dot"></span><span class="hud-tag">Live</span></span>
+  </div>
+
+  <!-- Page Header with quick stats -->
+  <div class="page-header reveal">
+    <div>
+      <p class="page-subtitle-hud">{% if lang == 'en' %}Exoplanet Research Terminal{% else %}Экзопланета Зерттеу Терминалы{% endif %}</p>
+      <h1 class="page-title">{% if lang == 'en' %}Explore{% else %}Зерттеу{% endif %}</h1>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div class="glass" style="padding:12px 20px;text-align:center;min-width:90px">
+        <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;background:linear-gradient(130deg,#fff,rgba(212,165,116,0.9));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1" id="qs-systems">{{ systems|length }}</div>
+        <div style="font-size:0.60rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint);margin-top:3px">{% if lang == 'en' %}Systems{% else %}Жүйелер{% endif %}</div>
+      </div>
+      <div class="glass" style="padding:12px 20px;text-align:center;min-width:90px">
+        <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--green);line-height:1" id="qs-habitable">{{ systems.values()|sum(attribute='habitable_count') if systems else 0 }}</div>
+        <div style="font-size:0.60rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint);margin-top:3px">{% if lang == 'en' %}Habitable{% else %}Тіршілікке жарамды{% endif %}</div>
+      </div>
+      <div class="glass" style="padding:12px 20px;text-align:center;min-width:90px">
+        <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--text);line-height:1" id="qs-planets">{{ systems.values()|sum(attribute='planet_count') if systems else 0 }}</div>
+        <div style="font-size:0.60rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint);margin-top:3px">{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="tab-nav reveal">
+    <button class="tab-btn {% if tab=='missions' %}active{% endif %}" data-tab="missions">{% if lang == 'en' %}Missions{% else %}Миссиялар{% endif %}</button>
+    <button class="tab-btn {% if tab=='system' %}active{% endif %}"   data-tab="system">{% if lang == 'en' %}System View{% else %}Жүйе Көрінісі{% endif %}</button>
+    <button class="tab-btn {% if tab=='map' %}active{% endif %}"      data-tab="map">{% if lang == 'en' %}Star Map{% else %}Жұлдыз Картасы{% endif %}</button>
+    <button class="tab-btn {% if tab=='compare' %}active{% endif %}"  data-tab="compare">{% if lang == 'en' %}Compare{% else %}Салыстыру{% endif %}</button>
+    <button class="tab-btn {% if tab=='travel' %}active{% endif %}"   data-tab="travel">{% if lang == 'en' %}Travel Sim{% else %}Саяхат Сим.{% endif %}</button>
+    <button class="tab-btn {% if tab=='history' %}active{% endif %}"  data-tab="history">{% if lang == 'en' %}History{% else %}Тарих{% endif %}</button>
+    <button class="tab-btn {% if tab=='chat' %}active{% endif %}"     data-tab="chat">{% if lang == 'en' %}AI Chat{% else %}ЖИ Чат{% endif %}</button>
+    <button class="tab-btn {% if tab=='news' %}active{% endif %}"     data-tab="news">{% if lang == 'en' %}News{% else %}Жаңалықтар{% endif %}</button>
+    <button class="tab-btn {% if tab=='nasaeyes' %}active{% endif %}"  data-tab="nasaeyes">🌌 NASA Eyes</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: MISSIONS
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='missions' %}active{% endif %}" id="tab-missions">
+
+    <!-- Step guide cards -->
+    <div class="step-grid reveal" style="margin-bottom:18px">
+      <div class="step-card">
+        <span class="step-num">01</span>
+        <span class="step-icon">📡</span>
+        <div class="step-title">{% if lang == 'en' %}Select Catalog{% else %}Каталог таңдаңыз{% endif %}</div>
+        <div class="step-desc">{% if lang == 'en' %}Choose a star catalog — Nearby, Kepler, TESS or K2{% else %}Жұлдыз каталогін таңдаңыз{% endif %}</div>
+      </div>
+      <div class="step-card">
+        <span class="step-num">02</span>
+        <span class="step-icon">🎯</span>
+        <div class="step-title">{% if lang == 'en' %}Target a Star{% else %}Жұлдыз белгілеңіз{% endif %}</div>
+        <div class="step-desc">{% if lang == 'en' %}Pick a target star from the catalog or search NASA Archive{% else %}NASA мұрағатынан жұлдыз таңдаңыз{% endif %}</div>
+      </div>
+      <div class="step-card">
+        <span class="step-num">03</span>
+        <span class="step-icon">🔬</span>
+        <div class="step-title">{% if lang == 'en' %}Scan System{% else %}Жүйені сканерлеу{% endif %}</div>
+        <div class="step-desc">{% if lang == 'en' %}Analyze planets · Calculate ESI, habitability, atmosphere{% else %}Планеталарды талдаңыз, тіршілікке жарамдылықты есептеңіз{% endif %}</div>
+      </div>
+      <div class="step-card">
+        <span class="step-num">04</span>
+        <span class="step-icon">📈</span>
+        <div class="step-title">{% if lang == 'en' %}Review Results{% else %}Нәтижелерді қарау{% endif %}</div>
+        <div class="step-desc">{% if lang == 'en' %}Explore System View, compare planets, simulate travel{% else %}Жүйені зерттеңіз, планеталарды салыстырыңыз{% endif %}</div>
+      </div>
+    </div>
+
+    <!-- Main bento: 3-column cockpit layout -->
+    <div style="display:grid;grid-template-columns:280px 1fr 300px;gap:14px;align-items:start">
+
+      <!-- COLUMN 1: Mission Control panel -->
+      <div class="glass reveal" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(212,165,116,0.04)">
+          <div class="section-title" style="margin-bottom:0">{% if lang == 'en' %}Mission Control{% else %}Миссия Басқармасы{% endif %}</div>
+        </div>
+        <div style="padding:20px">
+
+          <!-- Catalog select -->
+          <div class="form-group">
+            <label class="form-label">{% if lang == 'en' %}Select Catalog{% else %}Каталог таңдау{% endif %}</label>
+            <div class="select-wrapper">
+              <select class="form-select" id="catalogSelect" onchange="updateStarList()">
+                {% for key, cat in catalogs.items() %}
+                  <option value="{{ key }}">{{ cat.name[lang] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Star select -->
+          <div class="form-group">
+            <label class="form-label">{% if lang == 'en' %}Target Star{% else %}Нысан Жұлдыз{% endif %}</label>
+            <div class="select-wrapper">
+              <select class="form-select" id="starSelect" onchange="onStarSelectChange(this.value)"></select>
+            </div>
+          </div>
+
+          <!-- AI catalog hint -->
+          <div id="catalogHintBox" style="display:none;margin-bottom:12px;
+               padding:10px 14px;background:rgba(212,165,116,0.06);
+               border:1px solid rgba(212,165,116,0.2);border-radius:10px">
+            <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;
+                        color:var(--accent);margin-bottom:4px;display:flex;align-items:center;gap:6px">
+              <span>✨</span> {% if lang == 'en' %}Why scan this star?{% else %}Неліктен бұл жұлдызды сканерлеу керек?{% endif %}
+            </div>
+            <div id="catalogHintText"
+                 style="font-size:0.77rem;color:var(--text-muted);line-height:1.6"></div>
+          </div>
+
+          <button class="btn btn-primary btn-full mb-12" id="scanBtn" onclick="scanStar()">
+            <span id="scanBtnIcon">🔍</span>
+            <span id="scanBtnText">{% if lang == 'en' %}Scan System{% else %}Жүйені сканерлеу{% endif %}</span>
+          </button>
+
+          <!-- Progress -->
+          <div class="d-flex justify-between mb-8">
+            <span class="text-xs text-muted" id="progressLabel">{% if lang == 'en' %}Progress: 0/15{% else %}Прогресс: 0/15{% endif %}</span>
+            <span class="text-xs text-muted" id="progressPct">0%</span>
+          </div>
+          <div class="progress-bar mb-16">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+          </div>
+
+          <!-- Auto-scan -->
+          <button class="btn btn-secondary btn-full mb-16" id="autoScanBtn" onclick="startAutoScan()">
+            <span>⚡</span> {% if lang == 'en' %}Auto-Scan Catalog{% else %}Каталогты авто-сканерлеу{% endif %}
+          </button>
+          <div id="autoScanStatus" class="text-xs text-muted hidden" style="text-align:center;margin-bottom:12px"></div>
+
+          <hr class="divider">
+
+          <!-- Manual Search -->
+          <div class="section-title mt-16">{% if lang == 'en' %}Manual Search{% else %}Қолмен іздеу{% endif %}</div>
+          <div class="form-group">
+            <label class="form-label">{% if lang == 'en' %}Star Name{% else %}Жұлдыз атауы{% endif %}</label>
+            <input type="text" class="form-input" id="manualSearchInput"
+                   placeholder="e.g. Kepler-452, HD 40307..."
+                   onkeydown="if(event.key==='Enter') manualSearch()">
+          </div>
+          <button class="btn btn-secondary btn-full" onclick="manualSearch()">
+            <span>🔭</span> {% if lang == 'en' %}Search NASA Archive{% else %}NASA мұрағатын іздеу{% endif %}
+          </button>
+        </div>
+      </div>
+
+      <!-- COLUMN 2: Center panel -->
+      <div class="reveal" style="display:flex;flex-direction:column;gap:14px">
+        {% if systems %}
+        <!-- Quick metrics row -->
+        {% set best_sys = namespace(name='', score=0, hz=0, dist=0) %}
+        {% for hostname, data in systems.items() %}
+          {% if data.best_score > best_sys.score %}
+            {% set best_sys.name = hostname %}
+            {% set best_sys.score = data.best_score %}
+            {% set best_sys.hz = data.habitable_count %}
+            {% set best_sys.dist = data.distance %}
+          {% endif %}
+        {% endfor %}
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div class="glass" style="padding:18px 16px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;right:0;width:50px;height:50px;background:radial-gradient(circle at top right,rgba(212,165,116,0.15),transparent);pointer-events:none"></div>
+            <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint);margin-bottom:6px">{% if lang == 'en' %}Best System{% else %}Үздік жүйе{% endif %}</div>
+            <div style="font-family:var(--font-display);font-size:0.95rem;font-weight:700;color:var(--accent);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ best_sys.name or '—' }}</div>
+            <div style="font-size:0.70rem;color:var(--text-faint);margin-top:4px">{{ best_sys.hz }} {% if lang == 'en' %}habitable{% else %}тіршілікке жарамды{% endif %}</div>
+          </div>
+          <div class="glass" style="padding:18px 16px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;right:0;width:50px;height:50px;background:radial-gradient(circle at top right,rgba(124,185,124,0.12),transparent);pointer-events:none"></div>
+            <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint);margin-bottom:6px">{% if lang == 'en' %}Top Score{% else %}Ең жоғары ұпай{% endif %}</div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--green);line-height:1">{{ best_sys.score }}</div>
+            <div style="font-size:0.70rem;color:var(--text-faint);margin-top:2px">{% if lang == 'en' %}out of 100{% else %}100-ден{% endif %}</div>
+          </div>
+          <div class="glass" style="padding:18px 16px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;right:0;width:50px;height:50px;background:radial-gradient(circle at top right,rgba(0,212,255,0.10),transparent);pointer-events:none"></div>
+            <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint);margin-bottom:6px">{% if lang == 'en' %}Total Planets{% else %}Барлық планеталар{% endif %}</div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--blue);line-height:1">{{ systems.values()|sum(attribute='planet_count') }}</div>
+            <div style="font-size:0.70rem;color:var(--text-faint);margin-top:2px">{% if lang == 'en' %}discovered{% else %}табылған{% endif %}</div>
+          </div>
+        </div>
+
+        <!-- System preview card -->
+        {% if current_system %}
+        <div class="glass" style="padding:22px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;right:0;bottom:0;width:35%;background:radial-gradient(ellipse at right,rgba(212,165,116,0.06),transparent);pointer-events:none"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div>
+              <div style="font-size:0.60rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint);margin-bottom:4px">{% if lang == 'en' %}Currently Loaded{% else %}Жүктелген{% endif %}</div>
+              <div style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--text)">🌟 {{ current_system }}</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="switchTab('system')">{% if lang == 'en' %}View System →{% else %}Жүйені қарау →{% endif %}</button>
+          </div>
+          {% if current_planets %}
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            {% for planet in current_planets[:6] %}
+            {% set sc = planet.hab_score %}
+            {% set sc_color = '#7cb97c' if sc >= 70 else ('#00d4ff' if sc >= 50 else ('#d4a574' if sc >= 30 else '#f87171')) %}
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer" onclick="switchTab('system')">
+              <span style="font-size:1.2rem">{{ planet.emoji }}</span>
+              <span style="font-size:0.60rem;color:var(--text-faint);text-align:center;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ planet.name.split(' ')|last }}</span>
+              <span style="font-size:0.68rem;font-weight:700;color:{{ sc_color }}">{{ sc }}</span>
+            </div>
+            {% endfor %}
+            {% if current_planets|length > 6 %}
+            <div style="display:flex;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);color:var(--text-faint);font-size:0.72rem">+{{ current_planets|length - 6 }} more</div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="glass" style="padding:24px;text-align:center">
+          <div style="font-size:2rem;margin-bottom:10px">🌍</div>
+          <div style="font-size:0.88rem;color:var(--text-muted)">{% if lang == 'en' %}Select a star from Mission Control and scan to load a system{% else %}Миссия Басқармасынан жұлдыз таңдаңыз және жүйені сканерлеңіз{% endif %}</div>
+        </div>
+        {% endif %}
+
+        <!-- Scanned systems mini-list -->
+        <div class="glass" style="padding:0;overflow:hidden">
+          <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-faint)">{% if lang == 'en' %}Recent Scans{% else %}Соңғы сканерлеулер{% endif %}</div>
+            <button class="btn btn-ghost btn-sm" onclick="switchTab('history')" style="font-size:0.70rem;padding:3px 10px">{% if lang == 'en' %}View All{% else %}Барлығы{% endif %}</button>
+          </div>
+          <div style="padding:8px 0">
+            {% if systems %}
+              {% for hostname, data in systems.items()|sort(attribute='1.best_score', reverse=True) %}
+              {% if loop.index <= 4 %}
+              {% set sc = data.best_score %}
+              {% set sc_color = '#7cb97c' if sc >= 70 else ('#00d4ff' if sc >= 50 else ('#d4a574' if sc >= 30 else '#f87171')) %}
+              <div style="display:flex;align-items:center;gap:12px;padding:8px 18px;transition:background 0.15s;cursor:pointer" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background=''" onclick="loadSystem('{{ hostname }}')">
+                <span style="font-size:0.95rem">🌟</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ hostname }}</div>
+                  <div style="font-size:0.68rem;color:var(--text-faint)">{{ data.planet_count }} planets · {{ "%.1f"|format(data.distance) if data.distance else '?' }} ly</div>
+                </div>
+                <div style="font-size:0.85rem;font-weight:700;color:{{ sc_color }}">{{ sc }}</div>
+              </div>
+              {% endif %}
+              {% endfor %}
+            {% else %}
+            <div style="padding:20px 18px;text-align:center;color:var(--text-faint);font-size:0.80rem">{% if lang == 'en' %}No systems scanned yet{% else %}Жүйелер сканерленбеген{% endif %}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        {% else %}
+        <!-- Welcome / empty state -->
+        <div class="glass" style="padding:48px 32px;text-align:center">
+          <div style="font-size:3.5rem;margin-bottom:20px">🔭</div>
+          <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;margin-bottom:8px">{% if lang == 'en' %}Begin Your Mission{% else %}Миссияны бастаңыз{% endif %}</div>
+          <div style="color:var(--text-muted);font-size:0.88rem;margin-bottom:24px;max-width:340px;margin-left:auto;margin-right:auto">{% if lang == 'en' %}Select a catalog, choose a target star, and scan the system to start discovering exoplanets{% else %}Каталог таңдаңыз, мақсатты жұлдыз таңдаңыз және жүйені сканерлеңіз{% endif %}</div>
+          <button class="btn btn-primary" onclick="document.getElementById('scanBtn').click()">{% if lang == 'en' %}Launch First Scan{% else %}Алғашқы сканерлеуді іске қосу{% endif %}</button>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- COLUMN 3: Mission Log -->
+      <div class="glass reveal" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(212,165,116,0.04)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="section-title" style="margin-bottom:0">{% if lang == 'en' %}Mission Log{% else %}Миссия журналы{% endif %}</div>
+            <div style="display:flex;gap:8px">
+              <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:8px">
+                <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--accent)" id="log-systems">{{ systems|length }}</div>
+                <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-faint)">Systems</div>
+              </div>
+              <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:8px">
+                <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--green)" id="log-habitable">{{ systems.values()|sum(attribute='habitable_count') if systems else 0 }}</div>
+                <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-faint)">HZ</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="missionLogContainer" style="max-height:500px;overflow-y:auto;padding:8px 16px">
+          {% if mission_log %}
+            {% for log in mission_log|reverse %}
+            <div class="log-entry">
+              <div class="log-dot"></div>
+              <div class="log-body">
+                <div class="log-time">{{ log.time }}</div>
+                <div class="log-action">{{ log.action }}</div>
+                <div class="log-result">{{ log.result }} · Best: {{ log.score }}/100</div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-muted text-sm" style="text-align:center;padding:40px 0">
+              {% if lang == 'en' %}No missions yet.<br>Scan a star system to begin.{% else %}Миссиялар жоқ.<br>Жұлдыз жүйесін сканерлеңіз.{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SCAN TERMINAL — hidden by default, shown during scan -->
+    <div id="scanTerminal" class="scan-terminal-panel" style="display:none;margin-top:14px">
+      <div class="scan-terminal-header">
+        <span class="scan-terminal-dot" style="background:#f87171"></span>
+        <span class="scan-terminal-dot" style="background:#fbbf24"></span>
+        <span class="scan-terminal-dot" style="background:#4ade80"></span>
+        <span class="scan-terminal-title">ATLAS // DEEP SCAN TERMINAL</span>
+        <span id="scanTermStatus" class="scan-term-badge">● ACTIVE</span>
+      </div>
+      <div class="scan-terminal-body" id="scanTermLog"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: SYSTEM VIEW
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='system' %}active{% endif %}" id="tab-system">
+    {% if current_planets %}
+    <!-- Star info metrics -->
+    <div class="metrics-row reveal">
+      <div class="glass metric-card">
+        <div class="m-value">{{ current_star.teff|int if current_star else 5778 }} K</div>
+        <div class="m-label">⭐ Temperature</div>
+      </div>
+      <div class="glass metric-card">
+        <div class="m-value">{{ "%.2f"|format(current_star.radius) if current_star else 1.0 }} R☉</div>
+        <div class="m-label">📏 Radius</div>
+      </div>
+      <div class="glass metric-card">
+        <div class="m-value">{{ "%.2f"|format(current_star.mass) if current_star else 1.0 }} M☉</div>
+        <div class="m-label">⚖️ Mass</div>
+      </div>
+      <div class="glass metric-card">
+        <div class="m-value">{{ "%.1f"|format(current_star.distance) if current_star and current_star.distance else '?' }} ly</div>
+        <div class="m-label">📍 Distance</div>
+      </div>
+    </div>
+
+    <!-- 3D System chart -->
+    <div class="glass p-16 reveal mb-16">
+      <div class="section-title">{{ current_system or 'System View' }} — 3D Orbital Map</div>
+      <div class="chart-wrap" id="systemChartWrap">
+        <div class="chart-loading" id="systemChartLoading">
+          <div class="spinner"></div><span>Loading visualization…</span>
+        </div>
+        <div id="systemChart"></div>
+      </div>
+    </div>
+
+    <!-- Planet cards -->
+    <div class="glass p-20 reveal mb-16">
+      <div class="section-title">Planets ({{ current_planets|length }})</div>
+      <div class="planets-grid" id="planetCardsGrid">
+        {% for planet in current_planets %}
+        {% set score = planet.hab_score %}
+        {% set score_class = 'score-high' if score >= 70 else ('score-medium' if score >= 50 else ('score-low' if score >= 30 else 'score-none')) %}
+        <div class="glass planet-card {% if loop.index0 == selected_planet %}selected{% endif %}"
+             onclick="selectPlanet({{ loop.index0 }})" data-planet-idx="{{ loop.index0 }}">
+          {% if planet.in_hz %}<div class="p-hz-badge" title="In Habitable Zone"></div>{% endif %}
+          <div class="p-emoji">{{ planet.emoji }}</div>
+          <div class="p-name">{{ planet.name.split(' ')|last }}</div>
+          <div class="p-score {{ score_class }}">{{ score }}</div>
+          <div class="p-score-label">/100</div>
+          <div class="planet-hover-tooltip glass">
+            <div class="tooltip-row"><span class="t-label">Type</span><span class="t-val">{{ planet.type }}</span></div>
+            <div class="tooltip-row"><span class="t-label">Radius</span><span class="t-val">{{ planet.radius }} R⊕</span></div>
+            <div class="tooltip-row"><span class="t-label">Temp</span><span class="t-val">{{ planet.temp|int }} K</span></div>
+            <div class="tooltip-row"><span class="t-label">ESI</span><span class="t-val">{{ planet.esi }}</span></div>
+            <div class="tooltip-row"><span class="t-label">HZ</span><span class="t-val">{{ '✅ Yes' if planet.in_hz else '❌ No' }}</span></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Selected planet detail -->
+    {% set sel = current_planets[selected_planet] %}
+    <div class="detail-grid reveal" id="planetDetail">
+      <!-- Left: properties -->
+      <div class="glass p-24">
+        <div class="d-flex align-center gap-12 mb-16">
+          <span style="font-size:2.5rem">{{ sel.emoji }}</span>
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700">{{ sel.name }}</div>
+            <div class="text-muted text-sm">{{ sel.type }}</div>
+            <div class="text-faint text-xs" style="margin-top:2px">{{ sel.type_desc[lang] if sel.type_desc is mapping else sel.type_desc }}</div>
+          </div>
+        </div>
+
+        <div class="detail-props">
+          <div class="glass prop-item"><div class="prop-value">{{ sel.radius }}</div><div class="prop-label">Radius R⊕</div></div>
+          <div class="glass prop-item"><div class="prop-value">{{ sel.mass }}</div><div class="prop-label">Mass M⊕</div></div>
+          <div class="glass prop-item"><div class="prop-value">{{ sel.temp|int }}K</div><div class="prop-label">{% if lang == 'en' %}Temperature{% else %}Температура{% endif %}</div></div>
+          <div class="glass prop-item"><div class="prop-value">{{ sel.gravity }}</div><div class="prop-label">{% if lang == 'en' %}Gravity g{% else %}Ауырлық g{% endif %}</div></div>
+          <div class="glass prop-item"><div class="prop-value">{{ sel.esi }}</div><div class="prop-label">ESI</div></div>
+          <div class="glass prop-item"><div class="prop-value">{{ sel.period }}d</div><div class="prop-label">{% if lang == 'en' %}Orbit Period{% else %}Орбита кезеңі{% endif %}</div></div>
+          <div class="glass prop-item"><div class="prop-value">{{ sel.orbit }} AU</div><div class="prop-label">{% if lang == 'en' %}Orbit Dist.{% else %}Орбита қашықт.{% endif %}</div></div>
+          <div class="glass prop-item"><div class="prop-value">{{ sel.escape_vel }} km/s</div><div class="prop-label">{% if lang == 'en' %}Escape Vel.{% else %}Шығу жылд.{% endif %}</div></div>
+          <div class="glass prop-item"><div class="prop-value">{{ sel.moons }}</div><div class="prop-label">{% if lang == 'en' %}Est. Moons{% else %}Болжалды Айлар{% endif %}</div></div>
+        </div>
+
+        {% set sc = sel.hab_score %}
+        {% set sc_color = '#7cb97c' if sc >= 70 else ('#d4a574' if sc >= 50 else ('#fbbf24' if sc >= 30 else '#f87171')) %}
+        <div class="glass score-ring-wrap">
+          <div>
+            <div class="score-ring-num" style="color:{{ sc_color }}">{{ sc }}</div>
+            <div class="score-ring-label">{% if lang == 'en' %}Habitability Score{% else %}Тіршілік ұпайы{% endif %}</div>
+            <div class="score-ring-sub">
+              {% if sel.in_hz %}<span class="badge badge-success">✅ {% if lang == 'en' %}In Habitable Zone{% else %}Тіршілік аймағында{% endif %}</span>
+              {% else %}<span class="badge badge-danger">❌ {% if lang == 'en' %}Outside HZ{% else %}Тіршілік аймағынан тыс{% endif %}</span>{% endif %}
+            </div>
+            {% if sel.ml_score is not none %}
+            <div class="text-xs text-muted mt-8">{% if lang == 'en' %}ML Model{% else %}МО Моделі{% endif %}: {{ sel.ml_score|int }}/100</div>
+            {% endif %}
+          </div>
+          <div style="flex:1">
+            <div class="life-bar" style="height:10px">
+              <div class="life-fill" style="width:{{ sc }}%;background:{{ sc_color }}"></div>
+            </div>
+            {% if sel.disc_year %}<div class="text-xs text-muted mt-8">{% if lang == 'en' %}Discovered{% else %}Ашылған{% endif %}: {{ sel.disc_year }}</div>{% endif %}
+            {% if sel.disc_method %}<div class="text-xs text-muted">{% if lang == 'en' %}Method{% else %}Әдіс{% endif %}: {{ sel.disc_method }}</div>{% endif %}
+          </div>
+        </div>
+
+        <button class="btn btn-secondary btn-full mt-16" onclick="addToCompare('{{ sel.name }}', {{ sel|tojson }})">
+          + {% if lang == 'en' %}Add to Compare{% else %}Салыстыруға қосу{% endif %}
+        </button>
+      </div>
+
+      <!-- Right: Analysis -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="glass p-20">
+          <div class="section-title">{% if lang == 'en' %}Atmosphere{% else %}Атмосфера{% endif %}</div>
+          <div class="text-sm" style="color:var(--text-muted);line-height:1.6">{{ sel.atmo_type[lang] if sel.atmo_type is mapping else sel.atmo_type }}</div>
+        </div>
+        <div class="glass p-20">
+          <div class="section-title">{% if lang == 'en' %}Hazard Assessment{% else %}Қауіп бағасы{% endif %}</div>
+          {% for h in sel.hazards %}
+          <div class="hazard-item {{ h.level }}">
+            <div class="hazard-name">{{ h.name[lang] if h.name is mapping else h.name }}</div>
+            <div class="hazard-desc">{{ h.desc[lang] if h.desc is mapping else h.desc }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="glass p-20">
+          <div class="section-title">{% if lang == 'en' %}Life Potential{% else %}Өмір потенциалы{% endif %}</div>
+          {% set ltype, lscore, lfactors, lcolor = sel|life_potential %}
+          <div class="badge badge-{{ lcolor }} mb-12">{{ ltype[lang] if ltype is mapping else ltype }}</div>
+          <div class="life-bar mb-12">
+            <div class="life-fill" style="width:{{ lscore }}%;background:{% if lcolor=='success' %}var(--green){% elif lcolor=='warning' %}var(--yellow){% elif lcolor=='info' %}var(--blue){% else %}var(--red){% endif %}"></div>
+          </div>
+          {% for f in lfactors %}
+          <div class="life-factor">
+            <span class="lf-dot" style="background:{% if f.ok == true %}var(--green){% elif f.ok == false %}var(--red){% else %}var(--yellow){% endif %}"></span>
+            <span>{{ f.text[lang] if f.text is mapping else f.text }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="glass p-20">
+          <div class="section-title">{% if lang == 'en' %}Magnetic Field{% else %}Магнит өрісі{% endif %}</div>
+          <div class="text-sm text-muted">{{ sel.mag_desc[lang] if sel.mag_desc is mapping else sel.mag_desc }}</div>
+          {% if sel.mag_str %}<div class="text-display text-xl text-accent mt-8">{{ sel.mag_str }}× {% if lang == 'en' %}Earth{% else %}Жер{% endif %}</div>{% endif %}
+        </div>
+
+        <!-- ── AI Planet Report ── -->
+        <div class="glass p-20" id="aiPlanetBox">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="section-title" style="margin-bottom:0">🤖 {% if lang == 'en' %}AI Planet Report{% else %}ЖИ Планета Есебі{% endif %}</div>
+            <span style="font-size:0.62rem;color:var(--text-faint);letter-spacing:1px">Gemini</span>
+          </div>
+          <div id="aiPlanetText" class="text-sm" style="color:var(--text-muted);line-height:1.75;min-height:48px">
+            <span style="color:var(--text-faint);font-style:italic">
+              {% if lang == 'en' %}Generating AI analysis…{% else %}ЖИ талдауы жасалуда…{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <div class="glass p-24 reveal" style="text-align:center;padding:60px">
+      <div style="font-size:3rem;margin-bottom:16px">🔭</div>
+      <div style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">{% if lang == 'en' %}No System Loaded{% else %}Жүйе жүктелмеген{% endif %}</div>
+      <div class="text-muted text-sm mb-20">{% if lang == 'en' %}Run a mission first to see system details{% else %}Жүйе мәліметтерін көру үшін алдымен миссия іске қосыңыз{% endif %}</div>
+      <button class="btn btn-primary" onclick="switchTab('missions')">{% if lang == 'en' %}Go to Missions{% else %}Миссияларға өту{% endif %}</button>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: STAR MAP
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='map' %}active{% endif %}" id="tab-map">
+    {% if systems %}
+    <div class="metrics-row reveal">
+      <div class="glass metric-card"><div class="m-value">{{ systems|length }}</div><div class="m-label">{% if lang == 'en' %}Explored Systems{% else %}Зерттелген жүйелер{% endif %}</div></div>
+      <div class="glass metric-card"><div class="m-value">{{ systems.values()|sum(attribute='planet_count') if systems else 0 }}</div><div class="m-label">{% if lang == 'en' %}Total Planets{% else %}Барлық планеталар{% endif %}</div></div>
+      {% set distances = systems.values()|selectattr('distance')|map(attribute='distance')|list %}
+      <div class="glass metric-card"><div class="m-value">{{ "%.1f"|format(distances|min) if distances else '—' }} ly</div><div class="m-label">{% if lang == 'en' %}Nearest{% else %}Жақынырақ{% endif %}</div></div>
+      <div class="glass metric-card"><div class="m-value">{{ "%.1f"|format(distances|max) if distances else '—' }} ly</div><div class="m-label">{% if lang == 'en' %}Farthest{% else %}Алыс{% endif %}</div></div>
+    </div>
+
+    <div class="glass p-16 reveal mb-16">
+      <div class="section-title">{% if lang == 'en' %}3D Stellar Neighborhood{% else %}3D Жұлдыз Маңы{% endif %}</div>
+      <div class="d-flex gap-12 mb-12" style="flex-wrap:wrap">
+        <span class="badge badge-success">🟢 High (70+)</span>
+        <span class="badge badge-info">🔵 Moderate (50–69)</span>
+        <span class="badge badge-accent">🟡 Low (30–49)</span>
+        <span class="badge badge-danger">🔴 Minimal (&lt;30)</span>
+      </div>
+      <div class="chart-wrap" id="starmapWrap">
+        <div class="chart-loading" id="starmapLoading">
+          <div class="spinner"></div><span>{% if lang == 'en' %}Rendering star map…{% else %}Жұлдыз картасы жасалуда…{% endif %}</span>
+        </div>
+        <div id="starmapChart"></div>
+      </div>
+    </div>
+
+    <div class="glass p-20 reveal">
+      <div class="section-title">{% if lang == 'en' %}Explored Systems{% else %}Зерттелген жүйелер{% endif %}</div>
+      <div class="sort-bar">
+        <span class="text-xs text-muted">{% if lang == 'en' %}Sort by:{% else %}Сұрыптау:{% endif %}</span>
+        <button class="sort-btn active" onclick="sortSystems('score',this)">{% if lang == 'en' %}Score{% else %}Ұпай{% endif %}</button>
+        <button class="sort-btn" onclick="sortSystems('distance',this)">{% if lang == 'en' %}Distance{% else %}Қашықтық{% endif %}</button>
+        <button class="sort-btn" onclick="sortSystems('planets',this)">{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %}</button>
+        <button class="sort-btn" onclick="sortSystems('name',this)">{% if lang == 'en' %}Name{% else %}Атауы{% endif %}</button>
+      </div>
+      <div id="systemListContainer">
+        {% for hostname, data in systems.items()|sort(attribute='1.best_score', reverse=True) %}
+        {% set sc = data.best_score %}
+        {% set sc_color = '#7cb97c' if sc >= 70 else ('#00d4ff' if sc >= 50 else ('#d4a574' if sc >= 30 else '#f87171')) %}
+        <div class="glass system-row hoverable" data-name="{{ hostname }}" data-score="{{ sc }}"
+             data-distance="{{ data.distance or 9999 }}" data-planets="{{ data.planet_count }}">
+          <div>
+            <div class="sys-name">🌟 {{ hostname }}</div>
+            <div class="sys-meta">{{ data.planet_count }} planet{{ 's' if data.planet_count != 1 }} · {{ "%.1f"|format(data.distance) if data.distance else '?' }} ly · {{ data.timestamp }}</div>
+          </div>
+          <div class="sys-score" style="color:{{ sc_color }}">{{ sc }}<span class="text-faint text-xs">/100</span></div>
+          <div>{% if data.habitable_count > 0 %}<span class="badge badge-success">{{ data.habitable_count }} HZ</span>{% endif %}</div>
+          <button class="btn btn-secondary btn-sm" style="gap:4px" onclick="toggleStarAI('{{ hostname }}', this)">✨ AI</button>
+          <button class="btn btn-secondary btn-sm" onclick="loadSystem('{{ hostname }}')">Load</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSystem('{{ hostname }}', this)" title="Delete">✕</button>
+        </div>
+        <!-- AI description row — скрыта по умолчанию -->
+        <div id="starai-{{ hostname|replace(' ','_')|replace('-','_') }}"
+             style="display:none;padding:10px 16px 14px;margin-top:-6px;
+                    background:rgba(212,165,116,0.04);border:1px solid rgba(212,165,116,0.18);
+                    border-top:none;border-radius:0 0 10px 10px">
+          <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;
+                      color:var(--accent);margin-bottom:6px">✨ Gemini · System Profile</div>
+          <div class="starai-text-{{ hostname|replace(' ','_')|replace('-','_') }}"
+               style="font-size:0.78rem;color:var(--text-muted);line-height:1.6">…</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="glass p-24 reveal" style="text-align:center;padding:60px">
+      <div style="font-size:3rem;margin-bottom:16px">🗺️</div>
+      <div style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">{% if lang == 'en' %}Map is Empty{% else %}Карта бос{% endif %}</div>
+      <div class="text-muted text-sm mb-20">{% if lang == 'en' %}Scan star systems to populate the map{% else %}Картаны толтыру үшін жұлдыз жүйелерін сканерлеңіз{% endif %}</div>
+      <button class="btn btn-primary" onclick="switchTab('missions')">{% if lang == 'en' %}Start Scanning{% else %}Сканерлеуді бастау{% endif %}</button>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: COMPARE
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='compare' %}active{% endif %}" id="tab-compare">
+    <div class="bento-grid bento-2 reveal">
+
+      <!-- Planet selector -->
+      <div class="glass p-20">
+        <div class="section-title">{% if lang == 'en' %}Select Planets{% else %}Планеталарды таңдаңыз{% endif %}</div>
+        <div class="text-xs text-muted mb-8">{% if lang == 'en' %}Click to add/remove (max 6){% else %}Қосу/жою үшін басыңыз (макс 6){% endif %}</div>
+        <div class="glass mb-8" style="min-height:56px">
+          <div class="multi-select-grid" id="selectedChips"></div>
+        </div>
+        <div class="ms-available" id="msAvailable">
+          <div class="text-xs text-muted mb-8 uppercase" style="letter-spacing:1px">{% if lang == 'en' %}Reference Planets{% else %}Анықтамалық планеталар{% endif %}</div>
+          {% for name, data in known_planets.items() %}
+          <div class="ms-option" data-name="{{ name }}" onclick="toggleCompare('{{ name }}', {{ data|tojson }})">
+            <span>{{ name }}</span>
+          </div>
+          {% endfor %}
+          {% if custom_planets %}
+          <div class="text-xs text-muted mt-12 mb-8 uppercase" style="letter-spacing:1px">{% if lang == 'en' %}Discovered Planets{% else %}Табылған планеталар{% endif %}</div>
+          {% for name, data in custom_planets.items() %}
+          <div class="ms-option" data-name="{{ name }}" onclick="toggleCompare('{{ name }}', {{ data|tojson }})">
+            <span>{{ name }}</span>
+          </div>
+          {% endfor %}
+          {% endif %}
+        </div>
+        <button class="btn btn-ghost btn-sm mt-12" onclick="clearCompare()">{% if lang == 'en' %}Clear All{% else %}Барлығын тазалау{% endif %}</button>
+      </div>
+
+      <!-- Comparison table -->
+      <div class="glass p-20">
+        <div class="section-title">{% if lang == 'en' %}Metrics Table{% else %}Көрсеткіштер кестесі{% endif %}</div>
+        <div id="compareTableWrap">
+          <div class="text-muted text-sm" style="text-align:center;padding:40px 0">
+            {% if lang == 'en' %}Select at least 2 planets to compare{% else %}Салыстыру үшін кем дегенде 2 планета таңдаңыз{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="bento-grid bento-2 mt-16">
+      <div class="glass p-16 reveal">
+        <div class="section-title">{% if lang == 'en' %}Radar Chart{% else %}Радар диаграммасы{% endif %}</div>
+        <div class="chart-wrap" id="radarWrap">
+          <div class="chart-loading" id="radarLoading"><div class="spinner"></div><span>{% if lang == 'en' %}Awaiting selection…{% else %}Таңдауды күтуде…{% endif %}</span></div>
+          <div id="radarChart"></div>
+        </div>
+      </div>
+      <div class="glass p-16 reveal">
+        <div class="section-title">{% if lang == 'en' %}Bar Chart{% else %}Баған диаграммасы{% endif %}</div>
+        <div class="chart-wrap" id="barWrap">
+          <div class="chart-loading" id="barLoading"><div class="spinner"></div><span>{% if lang == 'en' %}Awaiting selection…{% else %}Таңдауды күтуде…{% endif %}</span></div>
+          <div id="barChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: TRAVEL SIMULATOR
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='travel' %}active{% endif %}" id="tab-travel">
+    <div class="bento-grid bento-2 reveal">
+
+      <!-- Controls -->
+      <div class="glass p-24">
+        <div class="section-title">{% if lang == 'en' %}Mission Parameters{% else %}Миссия параметрлері{% endif %}</div>
+
+        <div class="form-group">
+          <label class="form-label">{% if lang == 'en' %}Destination{% else %}Бағыт{% endif %}</label>
+          <div class="select-wrapper">
+            <select class="form-select" id="travelDest" onchange="updateTravelCalc()">
+              {% for hostname, data in systems.items() %}
+                {% if data.distance %}
+                <option value="{{ data.distance }}" data-name="{{ hostname }}">{{ hostname }} ({{ "%.1f"|format(data.distance) }} ly)</option>
+                {% endif %}
+              {% endfor %}
+              <option value="4.24" data-name="Proxima Centauri">Proxima Centauri (4.24 ly)</option>
+              <option value="40.7" data-name="TRAPPIST-1">TRAPPIST-1 (40.7 ly)</option>
+              <option value="112" data-name="Kepler-442">Kepler-442 (112 ly)</option>
+              <option value="101.4" data-name="TOI-700">TOI-700 (101.4 ly)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Velocity — <span id="velLabel">20% c</span></label>
+          <input type="range" class="range-slider" id="velocitySlider"
+                 min="1" max="99" value="20" oninput="updateVelLabel();updateTravelCalc()">
+        </div>
+
+        <button class="btn btn-primary btn-full mt-8" onclick="simulateTravel()">
+          🚀 {% if lang == 'en' %}Launch Simulation{% else %}Симуляцияны іске қосу{% endif %}
+        </button>
+      </div>
+
+      <!-- Results -->
+      <div class="glass p-24">
+        <div class="section-title">{% if lang == 'en' %}Relativistic Results{% else %}Релятивистік нәтижелер{% endif %}</div>
+        <div class="bento-grid bento-2" style="gap:10px" id="travelResults">
+          <div class="glass p-16"><div class="widget-value" id="tr-earth">—</div><div class="widget-unit">{% if lang == 'en' %}Earth Years{% else %}Жер жылдары{% endif %}</div><div class="widget-label">{% if lang == 'en' %}Observer Time{% else %}Бақылаушы уақыты{% endif %}</div></div>
+          <div class="glass p-16"><div class="widget-value" id="tr-ship">—</div><div class="widget-unit">{% if lang == 'en' %}Ship Years{% else %}Кеме жылдары{% endif %}</div><div class="widget-label">{% if lang == 'en' %}Traveler Time{% else %}Саяхатшы уақыты{% endif %}</div></div>
+          <div class="glass p-16"><div class="widget-value text-accent" id="tr-lorentz">γ = 1.000</div><div class="widget-unit">{% if lang == 'en' %}Lorentz Factor{% else %}Лоренц факторы{% endif %}</div><div class="widget-label">{% if lang == 'en' %}Time Dilation{% else %}Уақыт созылуы{% endif %}</div></div>
+          <div class="glass p-16"><div class="widget-value" id="tr-fuel">—</div><div class="widget-unit">kg</div><div class="widget-label">{% if lang == 'en' %}Fuel Required{% else %}Қажетті отын{% endif %}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Journey visualization -->
+    <div class="glass p-24 mt-16 reveal">
+      <div class="section-title">{% if lang == 'en' %}Journey Visualization{% else %}Саяхат визуализациясы{% endif %}</div>
+      <div class="travel-viz">
+        <div class="travel-track">
+          <div class="travel-progress-line" id="travelProgressLine" style="width:0%"></div>
+        </div>
+        <div class="travel-earth">🌍</div>
+        <div class="travel-ship" id="travelShip" style="left:5%">🚀</div>
+        <div class="travel-dest">🎯</div>
+        <div class="travel-pct" id="travelPct">0%</div>
+      </div>
+
+      <div class="timeline" id="travelTimeline">
+        <div class="phase-item active" id="phase-0">
+          <div class="phase-dot">🚀</div>
+          <div class="phase-name">{% if lang == 'en' %}Acceleration{% else %}Үдеу{% endif %}</div>
+          <div class="phase-time" id="phase-0-time">—</div>
+        </div>
+        <div class="phase-item" id="phase-1">
+          <div class="phase-dot">⚡</div>
+          <div class="phase-name">{% if lang == 'en' %}Cruise{% else %}Крейсерлік{% endif %}</div>
+          <div class="phase-time" id="phase-1-time">—</div>
+        </div>
+        <div class="phase-item" id="phase-2">
+          <div class="phase-dot">🔄</div>
+          <div class="phase-name">{% if lang == 'en' %}Deceleration{% else %}Тежелу{% endif %}</div>
+          <div class="phase-time" id="phase-2-time">—</div>
+        </div>
+        <div class="phase-item" id="phase-3">
+          <div class="phase-dot">🪐</div>
+          <div class="phase-name">{% if lang == 'en' %}Arrival{% else %}Жету{% endif %}</div>
+          <div class="phase-time" id="phase-3-time">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Life Narrative — появляется после симуляции -->
+    <div id="travelNarrativeBox" class="glass p-24 mt-16 reveal" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <span style="font-size:1.1rem">✨</span>
+        <div class="section-title" style="margin:0">{% if lang == 'en' %}Life at the Destination{% else %}Бағыттағы тіршілік{% endif %}</div>
+        <span style="font-size:0.62rem;color:var(--text-faint);margin-left:auto;letter-spacing:1px">Gemini AI</span>
+      </div>
+      <div id="travelNarrativeText"
+           style="font-size:0.86rem;line-height:1.85;color:var(--text-secondary);white-space:pre-wrap;
+                  min-height:40px">
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: HISTORY
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='history' %}active{% endif %}" id="tab-history">
+    {% if systems %}
+    <div class="glass p-20 reveal">
+      <div class="d-flex justify-between align-center mb-16">
+        <div class="section-title" style="margin:0">{% if lang == 'en' %}Research History{% else %}Зерттеу тарихы{% endif %}</div>
+        <div class="sort-bar" style="margin:0">
+          <span class="text-xs text-muted">{% if lang == 'en' %}Sort:{% else %}Сұрыптау:{% endif %}</span>
+          <button class="sort-btn active" onclick="sortHistory('score',this)">{% if lang == 'en' %}Score ↓{% else %}Ұпай ↓{% endif %}</button>
+          <button class="sort-btn" onclick="sortHistory('date',this)">{% if lang == 'en' %}Date{% else %}Күні{% endif %}</button>
+          <button class="sort-btn" onclick="sortHistory('planets',this)">{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %}</button>
+          <button class="sort-btn" onclick="sortHistory('distance',this)">{% if lang == 'en' %}Distance{% else %}Қашықтық{% endif %}</button>
+        </div>
+      </div>
+
+      <div id="historyContainer">
+        {% for hostname, data in systems.items()|sort(attribute='1.best_score', reverse=True) %}
+        {% set sc = data.best_score %}
+        {% set sc_color = '#7cb97c' if sc >= 70 else ('#00d4ff' if sc >= 50 else ('#d4a574' if sc >= 30 else '#f87171')) %}
+        <div class="glass system-row hoverable" data-name="{{ hostname }}" data-score="{{ sc }}"
+             data-date="{{ data.timestamp }}" data-planets="{{ data.planet_count }}"
+             data-distance="{{ data.distance or 9999 }}">
+          <div>
+            <div class="sys-name">🌟 {{ hostname }}</div>
+            <div class="sys-meta">{{ data.timestamp }} · {{ "%.1f"|format(data.distance) if data.distance else '?' }} ly</div>
+          </div>
+          <div>
+            <span class="badge badge-info">{{ data.planet_count }} planets</span>
+            {% if data.habitable_count %}<span class="badge badge-success ml-4">{{ data.habitable_count }} habitable</span>{% endif %}
+          </div>
+          <div class="sys-score" style="color:{{ sc_color }}">{{ sc }}<span class="text-faint text-xs">/100</span></div>
+          <button class="btn btn-secondary btn-sm" onclick="loadSystem('{{ hostname }}')">Load</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSystem('{{ hostname }}', this)" title="Delete">✕</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="glass p-24 reveal" style="text-align:center;padding:60px">
+      <div style="font-size:3rem;margin-bottom:16px">📜</div>
+      <div style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">{% if lang == 'en' %}No Research History{% else %}Зерттеу тарихы жоқ{% endif %}</div>
+      <div class="text-muted text-sm mb-20">{% if lang == 'en' %}Your exploration log is empty{% else %}Барлау журналыңыз бос{% endif %}</div>
+      <button class="btn btn-primary" onclick="switchTab('missions')">{% if lang == 'en' %}Start Exploring{% else %}Зерттеуді бастау{% endif %}</button>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: AI CHAT
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='chat' %}active{% endif %}" id="tab-chat">
+    <div class="glass reveal" style="max-width:800px;margin:0 auto">
+      <div class="d-flex align-center gap-12 p-20" style="border-bottom:1px solid var(--border)">
+        <span style="font-size:1.8rem">🤖</span>
+        <div>
+          <div style="font-family:var(--font-display);font-size:1rem;font-weight:600">ATLAS AI</div>
+          <div class="text-xs text-green">● Online — Exoplanet Research Assistant</div>
+        </div>
+      </div>
+
+      <!-- Command hints -->
+      <div style="padding:8px 16px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:0.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-faint);margin-right:4px">Commands:</span>
+        <span class="quick-q" onclick="sendQuickQ(this)" style="background:rgba(212,165,116,0.08);border-color:rgba(212,165,116,0.2)">scan TRAPPIST-1</span>
+        <span class="quick-q" onclick="sendQuickQ(this)" style="background:rgba(212,165,116,0.08);border-color:rgba(212,165,116,0.2)">scan Kepler-442</span>
+        <span class="quick-q" onclick="sendQuickQ(this)" style="background:rgba(212,165,116,0.08);border-color:rgba(212,165,116,0.2)">show analysis</span>
+        <span class="quick-q" onclick="sendQuickQ(this)" style="background:rgba(212,165,116,0.08);border-color:rgba(212,165,116,0.2)">open star map</span>
+        <span class="quick-q" onclick="sendQuickQ(this)" style="background:rgba(212,165,116,0.08);border-color:rgba(212,165,116,0.2)">list my systems</span>
+      </div>
+
+      <div class="quick-questions" id="quickQuestions">
+        <span class="quick-q" onclick="sendQuickQ(this)">What makes a planet habitable?</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">Tell me about TRAPPIST-1</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">How is ESI calculated?</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">What is the habitable zone?</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">How do we detect exoplanets?</span>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-msg bot">
+          <div class="msg-bubble">
+            👋 I'm ATLAS AI — your exoplanet research assistant.<br>
+            Ask me questions <em>or</em> give me commands: <b>scan TRAPPIST-1</b>, <b>show analysis</b>, <b>open star map</b>, <b>list my systems</b>.
+          </div>
+        </div>
+        {% for msg in chat_history %}
+        <div class="chat-msg {{ msg.role if msg.role == 'user' else 'bot' }}">
+          <div class="msg-bubble">{{ msg.content }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="chat-input-row">
+        <input type="text" class="form-input" id="chatInput"
+               placeholder="Ask a question or type: scan TRAPPIST-1, show analysis, open star map…"
+               onkeydown="if(event.key==='Enter') sendChat()">
+        <button class="btn btn-primary" onclick="sendChat()">{% if lang == 'en' %}Send →{% else %}Жіберу →{% endif %}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: NEWS
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='news' %}active{% endif %}" id="tab-news">
+
+    <!-- Header with category filters -->
+    <div class="reveal" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+        <div>
+          <p class="page-subtitle-hud">{% if lang == 'en' %}Latest Updates{% else %}Соңғы Жаңалықтар{% endif %}</p>
+          <h2 style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--text)">{% if lang == 'en' %}Exoplanet News{% else %}Экзопланета Жаңалықтары{% endif %}</h2>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap" id="newsFilterBtns">
+          <button class="sort-btn active" onclick="filterNews('all', this)">All</button>
+          <button class="sort-btn" onclick="filterNews('discovery', this)">Discovery</button>
+          <button class="sort-btn" onclick="filterNews('research', this)">Research</button>
+          <button class="sort-btn" onclick="filterNews('mission', this)">Mission</button>
+          <button class="sort-btn" onclick="filterNews('jwst', this)">JWST</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 1: Featured wide card + 1 normal -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px" class="reveal">
+
+      <!-- Featured large card (spans 2 columns) -->
+      <div class="glass hoverable news-card" data-category="jwst research" style="grid-column:span 2;padding:28px;position:relative;overflow:hidden;min-height:200px">
+        <div style="position:absolute;top:0;right:0;bottom:0;width:40%;background:radial-gradient(ellipse at right,rgba(212,165,116,0.08),transparent);pointer-events:none"></div>
+        <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+          <span class="badge badge-accent">Featured</span>
+          <span class="badge badge-info">JWST</span>
+          <span class="badge" style="background:rgba(124,185,124,0.15);color:var(--green);border:1px solid rgba(124,185,124,0.3)">Research</span>
+        </div>
+        <h3 style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.3">K2-18b: Carbon Dioxide and Methane Confirmed — Possible Hycean World</h3>
+        <p style="font-size:0.84rem;color:var(--text-muted);line-height:1.6;margin-bottom:16px">The James Webb Space Telescope has confirmed the presence of carbon dioxide and methane in the atmosphere of K2-18b, a sub-Neptune exoplanet 124 light-years away in the Leo constellation. Scientists at Cambridge University propose this could indicate a "Hycean world" — a planet with a hydrogen-rich atmosphere and a vast liquid water ocean beneath. The discovery marks the first time potential biosignature-adjacent molecules have been detected on a planet orbiting in the habitable zone of its star.</p>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <span style="font-size:0.72rem;color:var(--text-faint)">September 2023 · Updated 2025</span>
+          <span style="font-size:0.72rem;color:var(--text-faint)">·</span>
+          <span style="font-size:0.72rem;color:var(--accent)">NASA / ESA / Cambridge</span>
+          <span style="font-size:0.72rem;color:var(--text-faint)">·</span>
+          <span style="font-size:0.72rem;color:var(--text-faint)">124 ly · Leo constellation</span>
+        </div>
+      </div>
+
+      <!-- Normal card -->
+      <div class="glass hoverable news-card" data-category="discovery mission" style="padding:22px">
+        <div style="margin-bottom:12px;display:flex;gap:6px">
+          <span class="badge badge-success">Discovery</span>
+          <span class="badge" style="background:rgba(0,212,255,0.1);color:var(--blue);border:1px solid rgba(0,212,255,0.25)">TESS</span>
+        </div>
+        <h4 style="font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">TOI-700e: Second Earth-Sized Planet Confirmed in Habitable Zone</h4>
+        <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.55;margin-bottom:14px">TESS confirms a second Earth-sized rocky planet in the habitable zone of TOI-700, a cool M-dwarf star 101 light-years away in the Dorado constellation. TOI-700e orbits its star every 28 days and joins sibling TOI-700d as a rare multi-planet habitable-zone system.</p>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:0.70rem;color:var(--text-faint)">Jan 2023 · TESS Mission</span>
+          <span style="font-size:0.70rem;padding:3px 8px;background:rgba(124,185,124,0.12);color:var(--green);border-radius:6px;border:1px solid rgba(124,185,124,0.2)">ESI 0.82</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: 4 equal cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px" class="reveal">
+
+      <div class="glass hoverable news-card" data-category="research discovery" style="padding:20px">
+        <div style="font-size:1.8rem;margin-bottom:10px">🪐</div>
+        <div style="margin-bottom:10px"><span class="badge badge-info">Research</span></div>
+        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">TRAPPIST-1: Rocky Planets Confirmed Bone-Dry or Water-Rich</h4>
+        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">New JWST thermal emission data shows TRAPPIST-1b and 1c likely have no thick atmosphere, while inner planets may harbor significant water beneath rocky crusts. Observations of the outer planets 1e, 1f, and 1g continue to show promise for habitability.</p>
+        <div style="font-size:0.68rem;color:var(--text-faint)">March 2024 · JWST / Spitzer</div>
+      </div>
+
+      <div class="glass hoverable news-card" data-category="research" style="padding:20px">
+        <div style="font-size:1.8rem;margin-bottom:10px">🌍</div>
+        <div style="margin-bottom:10px"><span class="badge badge-accent">Research</span></div>
+        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">Kepler-442b: ML Models Push Habitability Score to 91/100</h4>
+        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">Updated machine learning habitability models incorporating new spectroscopic data place Kepler-442b among the top five most Earth-like worlds known. The planet orbits a K-type star 1,200 ly away with an orbital period of 112.3 days.</p>
+        <div style="font-size:0.68rem;color:var(--text-faint)">Nov 2024 · Kepler Archive / AI</div>
+      </div>
+
+      <div class="glass hoverable news-card" data-category="research jwst" style="padding:20px">
+        <div style="font-size:1.8rem;margin-bottom:10px">💧</div>
+        <div style="margin-bottom:10px">
+          <span class="badge badge-info">JWST</span>
+        </div>
+        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">LHS 1140b: Water Vapor Hints at Ocean-Bearing Super-Earth</h4>
+        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">JWST transmission spectroscopy of LHS 1140b, a super-Earth 49 light-years away, reveals a tentative water vapor signal in its atmosphere. If confirmed, this would make LHS 1140b one of the most compelling ocean-world candidates in the nearby stellar neighborhood.</p>
+        <div style="font-size:0.68rem;color:var(--text-faint)">July 2024 · JWST / STScI</div>
+      </div>
+
+      <div class="glass hoverable news-card" data-category="research discovery" style="padding:20px">
+        <div style="font-size:1.8rem;margin-bottom:10px">🌑</div>
+        <div style="margin-bottom:10px"><span class="badge badge-danger">Research</span></div>
+        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">Proxima Centauri b: Tidal Locking Analysis Revisited</h4>
+        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">New atmospheric circulation models suggest that even a tidally-locked Proxima Centauri b could sustain a stable climate if it possesses a thick enough atmosphere. Temperatures on the day-side terminator could allow liquid water, reviving interest in the nearest exoplanet.</p>
+        <div style="font-size:0.68rem;color:var(--text-faint)">Dec 2024 · ESO / Nature</div>
+      </div>
+    </div>
+
+    <!-- Row 3: 3 cards + 1 stats panel -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px" class="reveal">
+
+      <div class="glass hoverable news-card" data-category="mission discovery" style="padding:20px">
+        <div style="margin-bottom:10px"><span class="badge badge-success">Discovery</span></div>
+        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">GJ 667Cc: Updated Orbital Parameters Improve HZ Confidence</h4>
+        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">Precision radial velocity measurements refine the orbit of GJ 667Cc, a super-Earth in the habitable zone of a triple-star system 23 light-years away. The new data confirms the planet spends over 90% of its orbit within the conservative habitable zone.</p>
+        <div style="font-size:0.68rem;color:var(--text-faint)">Oct 2024 · HARPS Spectrograph</div>
+      </div>
+
+      <div class="glass hoverable news-card" data-category="mission jwst" style="padding:20px">
+        <div style="margin-bottom:10px">
+          <span class="badge badge-info">JWST</span>
+          <span class="badge" style="margin-left:4px;background:rgba(212,165,116,0.12);color:var(--accent);border:1px solid rgba(212,165,116,0.25)">Mission</span>
+        </div>
+        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">55 Cancri e: Magma Ocean and Shifting Atmosphere Confirmed</h4>
+        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">JWST's MIRI instrument captures unprecedented thermal maps of 55 Cancri e revealing a dynamic lava world with a volatile atmosphere that appears and disappears as the planet orbits its star every 17.7 hours. The discovery offers insight into early Earth-like geological processes.</p>
+        <div style="font-size:0.68rem;color:var(--text-faint)">May 2024 · MIRI / JWST</div>
+      </div>
+
+      <div class="glass hoverable news-card" data-category="discovery mission" style="padding:20px">
+        <div style="margin-bottom:10px">
+          <span class="badge badge-success">Discovery</span>
+        </div>
+        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">Wolf 1061c: One of the Closest Potentially Habitable Worlds</h4>
+        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">At just 13.8 light-years away, Wolf 1061c remains one of the closest known super-Earths in the habitable zone. New high-resolution imaging constraints rule out a large moon companion and refine the planet's bulk composition to a likely rocky interior with possible surface water.</p>
+        <div style="font-size:0.68rem;color:var(--text-faint)">Feb 2025 · AAT / UCSD</div>
+      </div>
+
+      <!-- Data panel: Mission Stats -->
+      <div class="glass" style="padding:0;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(212,165,116,0.04)">
+          <div style="font-size:0.60rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint)">Active Missions</div>
+          <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);margin-top:2px">Latest Missions</div>
+        </div>
+        <div style="padding:14px 18px">
+          <div style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:0.78rem;font-weight:600;color:var(--text)">James Webb (JWST)</span>
+              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(124,185,124,0.15);color:var(--green);border-radius:5px">Active</span>
+            </div>
+            <div style="font-size:0.70rem;color:var(--text-faint)">Atmosphere characterization</div>
+            <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:78%;background:var(--green);border-radius:2px"></div></div>
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:0.78rem;font-weight:600;color:var(--text)">TESS</span>
+              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(124,185,124,0.15);color:var(--green);border-radius:5px">Active</span>
+            </div>
+            <div style="font-size:0.70rem;color:var(--text-faint)">Transit photometry survey</div>
+            <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:90%;background:var(--accent);border-radius:2px"></div></div>
+          </div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:0.78rem;font-weight:600;color:var(--text)">Gaia DR3</span>
+              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(0,212,255,0.12);color:var(--blue);border-radius:5px">Analysis</span>
+            </div>
+            <div style="font-size:0.70rem;color:var(--text-faint)">Astrometric planet detection</div>
+            <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:62%;background:var(--blue);border-radius:2px"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:0.78rem;font-weight:600;color:var(--text)">Ariel (ESA)</span>
+              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(212,165,116,0.12);color:var(--accent);border-radius:5px">2029</span>
+            </div>
+            <div style="font-size:0.70rem;color:var(--text-faint)">Exoplanet atmosphere survey</div>
+            <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:18%;background:rgba(212,165,116,0.5);border-radius:2px"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       TAB: NASA EYES
+       ═══════════════════════════════════════════════════ -->
+  <div class="tab-content {% if tab=='nasaeyes' %}active{% endif %}" id="tab-nasaeyes">
+
+    <!-- Header strip -->
+    <div class="glass reveal" style="margin-bottom:1rem;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">NASA / JPL</div>
+        <h2 style="font-size:1.2rem;font-weight:700;margin:0">Eyes on the Solar System</h2>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:3px">Interactive 3D real-time simulation of our solar system &amp; NASA missions</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-ghost" onclick="nasaEyesGoto('home')" title="Solar System overview">☀️ Solar System</button>
+        <button class="btn-ghost" onclick="nasaEyesGoto('mars')" title="Focus on Mars">🔴 Mars</button>
+        <button class="btn-ghost" onclick="nasaEyesGoto('jupiter')" title="Focus on Jupiter">🪐 Jupiter</button>
+        <button class="btn-ghost" onclick="nasaEyesGoto('voyager1')" title="Voyager 1 mission">🛸 Voyager 1</button>
+        <button class="btn-ghost" onclick="nasaEyesGoto('webb')" title="James Webb Space Telescope">🔭 JWST</button>
+        <a href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" class="btn-ghost" style="text-decoration:none">↗ Open Full</a>
+      </div>
+    </div>
+
+    <!-- iframe panel -->
+    <div class="glass reveal nasa-eyes-wrap" style="position:relative;overflow:hidden;border-radius:var(--radius-lg);">
+      <div class="hud-panel-br"></div>
+      <!-- corner HUD brackets -->
+      <div style="position:absolute;top:12px;left:12px;width:18px;height:18px;border-top:2px solid rgba(212,165,116,0.5);border-left:2px solid rgba(212,165,116,0.5);pointer-events:none;z-index:2"></div>
+      <div style="position:absolute;top:12px;right:12px;width:18px;height:18px;border-top:2px solid rgba(212,165,116,0.5);border-right:2px solid rgba(212,165,116,0.5);pointer-events:none;z-index:2"></div>
+      <div style="position:absolute;bottom:12px;left:12px;width:18px;height:18px;border-bottom:2px solid rgba(212,165,116,0.5);border-left:2px solid rgba(212,165,116,0.5);pointer-events:none;z-index:2"></div>
+      <iframe id="nasaEyesFrame"
+              src="https://eyes.nasa.gov/apps/solar-system/#/home?logo=false&shareButton=false&collapseSettingsOptions=true&lighting=natural&time=24:00"
+              allowfullscreen
+              allow="autoplay; fullscreen"
+              style="width:100%;height:680px;border:none;display:block;border-radius:var(--radius-lg);">
+      </iframe>
+      <!-- loading overlay -->
+      <div id="nasaEyesLoader" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,9,18,0.92);border-radius:var(--radius-lg);pointer-events:none;transition:opacity 0.8s">
+        <div style="font-size:2.5rem;margin-bottom:12px;animation:spin-slow 4s linear infinite">🌐</div>
+        <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:2px;color:var(--accent)">LOADING NASA EYES…</div>
+        <div style="font-size:0.65rem;color:var(--text-faint);margin-top:6px">Connecting to JPL simulation engine</div>
+      </div>
+    </div>
+
+    <!-- Info cards row -->
+    <div class="bento-4 reveal" style="margin-top:1rem;">
+      <div class="glass" style="padding:16px 18px;">
+        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Navigation</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.7">
+          <b style="color:var(--text)">Left drag</b> — rotate view<br>
+          <b style="color:var(--text)">Right drag</b> — pan<br>
+          <b style="color:var(--text)">Scroll</b> — zoom in/out<br>
+          <b style="color:var(--text)">Click planet</b> — follow &amp; info
+        </div>
+      </div>
+      <div class="glass" style="padding:16px 18px;">
+        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Time Controls</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.7">
+          <b style="color:var(--text)">Play/Pause</b> — time flow<br>
+          <b style="color:var(--text)">Speed slider</b> — up to ×1000<br>
+          <b style="color:var(--text)">Calendar</b> — jump to any date<br>
+          <b style="color:var(--text)">Today</b> — reset to now
+        </div>
+      </div>
+      <div class="glass" style="padding:16px 18px;">
+        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Featured Missions</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.7">
+          🔭 James Webb ST<br>
+          🛸 Voyager 1 &amp; 2<br>
+          🚀 Perseverance (Mars)<br>
+          ☄️ New Horizons (Pluto)
+        </div>
+      </div>
+      <div class="glass" style="padding:16px 18px;">
+        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">3D Models</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.7">
+          All planets &amp; moons in<br>accurate scale &amp; real orbital<br>mechanics.<br>
+          <a href="https://science.nasa.gov/3d-resources/" target="_blank" style="color:var(--accent);text-decoration:none">↗ Download 3D Models</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+</div><!-- /page-content -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Catalog data ─────────────────────────────────────────
+const CATALOG_DATA = {{ catalogs|tojson }};
+const SCANNED = {{ scanned|tojson }};
+const SYSTEMS = {{ systems|tojson }};
+let compareList = {{ compare|tojson }};
+let customPlanets = {{ custom_planets|tojson }};
+let currentTab = "{{ tab }}";
+let autoScanRunning = false;
+const lang = "{{ lang }}";
+
+// Populate star list on load
+updateStarList();
+
+// Init charts if tabs are active
+document.addEventListener('DOMContentLoaded', function() {
+  updateHeaderStats();
+  if (currentTab === 'system') loadSystemChart();
+  if (currentTab === 'map')    loadStarmap();
+  if (currentTab === 'compare') initCompare();
+  initCompareFromState();
+  updateTravelCalc();
+});
+
+// ── Tab switching ─────────────────────────────────────────
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tabName));
+  currentTab = tabName;
+  if (tabName === 'system') loadSystemChart();
+  if (tabName === 'map')    loadStarmap();
+  if (tabName === 'compare') renderCompareCharts();
+}
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+// ── Star list ─────────────────────────────────────────────
+function updateStarList() {
+  const catKey = document.getElementById('catalogSelect').value;
+  const cat    = CATALOG_DATA[catKey];
+  const sel    = document.getElementById('starSelect');
+  const stars  = cat.stars.filter(s => !SCANNED.includes(s));
+  sel.innerHTML = '';
+  if (stars.length === 0) {
+    sel.innerHTML = '<option>All stars scanned! ✓</option>';
+    document.getElementById('progressLabel').textContent = 'Progress: ' + cat.stars.length + '/' + cat.stars.length;
+    document.getElementById('progressPct').textContent = '100%';
+    document.getElementById('progressFill').style.width = '100%';
+  } else {
+    stars.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    });
+  }
+  const done = cat.stars.length - stars.length;
+  const pct  = Math.round(done / cat.stars.length * 100);
+  document.getElementById('progressLabel').textContent = `Progress: ${done}/${cat.stars.length}`;
+  document.getElementById('progressPct').textContent   = pct + '%';
+  document.getElementById('progressFill').style.width  = pct + '%';
+}
+
+// ── Scan star ─────────────────────────────────────────────
+// ── Scan Terminal helpers ─────────────────────────────────────
+const _kz = window.ATLAS?.lang === 'kz';
+function termLog(msg, cls = '') {
+  const log = document.getElementById('scanTermLog');
+  if (!log) return;
+  const now = new Date();
+  const ts = `[${String(now.getSeconds()).padStart(2,'0')}.${String(now.getMilliseconds()).padStart(3,'0')}]`;
+  const line = document.createElement('div');
+  line.className = 'scan-term-line' + (cls ? ' ' + cls : '');
+  line.innerHTML = `<span class="scan-term-ts">${ts}</span> ${msg}`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+function showTerminal(star) {
+  const t = document.getElementById('scanTerminal');
+  const log = document.getElementById('scanTermLog');
+  if (!t || !log) return;
+  log.innerHTML = '';
+  t.style.display = 'block';
+  document.getElementById('scanTermStatus').textContent = '● ACTIVE';
+  document.getElementById('scanTermStatus').style.color = '#4ade80';
+}
+function hideTerminal() {
+  const t = document.getElementById('scanTerminal');
+  if (t) setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function scanStar(starName) {
+  const name = starName || document.getElementById('starSelect').value;
+  if (!name || name.includes('All stars')) return;
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  document.getElementById('scanBtnText').textContent = _kz ? 'Сканерлеу…' : 'Scanning…';
+  document.getElementById('scanBtnIcon').textContent = '⏳';
+
+  showTerminal(name);
+  termLog(_kz ? `Мақсат жұлдыз: <b>${name}</b>` : `Target star: <b>${name}</b>`);
+  await sleep(300);
+  termLog(_kz ? 'ATLAS терең сканер тізбегі инициализацияланды…' : 'Initializing ATLAS deep scan sequence…');
+  await sleep(400);
+  termLog(_kz ? 'NASA Экзопланета мұрағатына қосылу: TAP/sync…' : 'Connecting to NASA Exoplanet Archive: TAP/sync…');
+  await sleep(500);
+  termLog(_kz ? 'ADQL сұранысы жасалуда…' : 'Building ADQL query string…', 'dim');
+  await sleep(350);
+  termLog(`<span style="color:var(--text-faint);font-size:0.78em">SELECT pl_name, hostname, pl_rade, pl_bmasse, pl_eqt… FROM ps WHERE hostname LIKE '%${name}%'</span>`, 'dim');
+  await sleep(400);
+  termLog(_kz ? 'Сұраныс жіберілді, жауап күтілуде…' : 'Query dispatched — awaiting response stream…');
+
+  let fetchResult = null;
+  let fetchError  = null;
+  const fetchPromise = fetch('/api/scan', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({star_name: name})
+  }).then(r => r.json()).then(d => { fetchResult = d; }).catch(e => { fetchError = e; });
+
+  // Animate while waiting
+  await sleep(600);
+  termLog(_kz ? 'Деректер ағыны қабылданды…' : 'Data stream received — parsing records…');
+  await sleep(400);
+  termLog(_kz ? 'Планета параметрлері өңделуде…' : 'Processing planetary parameters…');
+  await sleep(350);
+  termLog(_kz ? 'ESI ұқсастық индекстері есептелуде…' : 'Computing Earth Similarity Index (ESI) scores…');
+  await sleep(350);
+  termLog(_kz ? 'Тіршілік аймағы шекаралары тексерілуде…' : 'Checking habitable zone boundaries…');
+  await sleep(300);
+  termLog(_kz ? 'МО тіршілік модели іске қосылуда…' : 'Running ML habitability classifier…');
+
+  // Wait for fetch to complete
+  await fetchPromise;
+  await sleep(300);
+
+  if (fetchError || !fetchResult) {
+    termLog(_kz ? `❌ ҚАТЕ: ${fetchError?.message || 'Байланыс қатесі'}` : `❌ ERROR: ${fetchError?.message || 'Network error'}`, 'error');
+    document.getElementById('scanTermStatus').textContent = '● FAILED';
+    document.getElementById('scanTermStatus').style.color = '#f87171';
+    showToast('Scan Failed', fetchError?.message || 'Network error', 'error');
+    btn.disabled = false;
+    document.getElementById('scanBtnText').textContent = _kz ? 'Жүйені сканерлеу' : 'Scan System';
+    document.getElementById('scanBtnIcon').textContent = '🔍';
+    return;
+  }
+
+  const data = fetchResult;
+  if (data.error) {
+    termLog(`❌ ${_kz ? 'ЖАУАП ЖОҚ' : 'NO DATA FOUND'}: "${name}"`, 'error');
+    termLog(_kz ? `Кеңес: NASA мұрағатындағы атауды тексеріңіз (мыс. "Proxima Cen", "TRAPPIST-1")` : `Tip: Check the NASA archive name (e.g. "Proxima Cen", "TRAPPIST-1")`, 'dim');
+    document.getElementById('scanTermStatus').textContent = '● NO DATA';
+    document.getElementById('scanTermStatus').style.color = '#fbbf24';
+    showToast('Scan Failed', data.error, 'error');
+    btn.disabled = false;
+    document.getElementById('scanBtnText').textContent = _kz ? 'Жүйені сканерлеу' : 'Scan System';
+    document.getElementById('scanBtnIcon').textContent = '🔍';
+    return;
+  }
+
+  const pl = data.planets || [];
+  const habCount = pl.filter(p => p.in_hz).length;
+  const bestScore = pl.length ? Math.max(...pl.map(p => p.hab_score)) : 0;
+
+  termLog(_kz ? `✓ Деректер алынды — <b>${pl.length} планета</b> табылды` : `✓ Data acquired — <b>${pl.length} planet(s)</b> catalogued`, 'success');
+  await sleep(200);
+  if (habCount > 0) {
+    termLog(_kz ? `🌱 <b>${habCount}</b> планета тіршілік аймағында — одан әрі талдауға лайықты!` : `🌱 <b>${habCount}</b> planet(s) in habitable zone — flagged for analysis!`, 'success');
+    await sleep(200);
+  }
+  termLog(_kz ? `📊 Ең жоғары тіршілік ұпайы: <b style="color:var(--accent)">${bestScore}/100</b>` : `📊 Best habitability score: <b style="color:var(--accent)">${bestScore}/100</b>`);
+  await sleep(250);
+  termLog(_kz ? '━━━━━━━━━━ СКАНЕРЛЕУ АЯҚТАЛДЫ ✓ ━━━━━━━━━━' : '━━━━━━━━━━ SCAN COMPLETE ✓ ━━━━━━━━━━', 'success bold');
+
+  document.getElementById('scanTermStatus').textContent = '● COMPLETE';
+  document.getElementById('scanTermStatus').style.color = '#4ade80';
+
+  // Update state
+  SCANNED.push(name);
+  SYSTEMS[data.hostname] = {
+    star: data.star, planets: pl,
+    planet_count: pl.length,
+    best_score: bestScore,
+    habitable_count: habCount,
+    distance: data.star.distance,
+    timestamp: new Date().toLocaleString()
+  };
+
+  updateStarList();
+  updateHeaderStats(data.stats || {});
+  addLogEntry(name, pl.length, bestScore);
+  showToast(_kz ? 'Сканерлеу аяқталды!' : 'Scan Complete!', `${pl.length} ${_kz ? 'планета табылды' : 'planets found'} · Best: ${bestScore}/100`, 'success');
+  data.new_achievements?.forEach(ach => {
+    setTimeout(() => showToast('🏆 Achievement!', ach.replace(/_/g,' '), 'info'), 1000);
+  });
+
+  await sleep(800);
+  hideTerminal();
+  switchTab('system');
+
+  // Reload page to refresh server-side state — but do it quietly after a delay
+  setTimeout(() => location.reload(), 2500);
+
+  btn.disabled = false;
+  document.getElementById('scanBtnText').textContent = _kz ? 'Жүйені сканерлеу' : 'Scan System';
+  document.getElementById('scanBtnIcon').textContent = '🔍';
+}
+
+// ── Manual search ─────────────────────────────────────────
+async function manualSearch() {
+  const q = document.getElementById('manualSearchInput').value.trim();
+  if (!q) return;
+  showToast('info', 'Searching…', `Querying NASA Archive for "${q}"`);
+  await scanStar(q);
+}
+
+// ── Auto-scan ─────────────────────────────────────────────
+let autoScanIndex = 0;
+let autoScanStars = [];
+async function startAutoScan() {
+  if (autoScanRunning) { autoScanRunning = false; document.getElementById('autoScanBtn').textContent = '⚡ Auto-Scan Catalog'; return; }
+  const catKey = document.getElementById('catalogSelect').value;
+  autoScanStars = CATALOG_DATA[catKey].stars.filter(s => !SCANNED.includes(s));
+  if (autoScanStars.length === 0) { showToast('info', 'Complete', 'All stars already scanned!'); return; }
+  autoScanRunning = true;
+  autoScanIndex = 0;
+  document.getElementById('autoScanBtn').textContent = '⏹ Stop Auto-Scan';
+  await runNextAutoScan();
+}
+async function runNextAutoScan() {
+  if (!autoScanRunning || autoScanIndex >= autoScanStars.length) {
+    autoScanRunning = false;
+    document.getElementById('autoScanBtn').textContent = '⚡ Auto-Scan Catalog';
+    document.getElementById('autoScanStatus').classList.add('hidden');
+    if (autoScanIndex > 0) showToast('success', 'Auto-Scan Complete!', `Scanned ${autoScanIndex} systems`);
+    return;
+  }
+  const star = autoScanStars[autoScanIndex];
+  const status = document.getElementById('autoScanStatus');
+  status.classList.remove('hidden');
+  status.textContent = `Scanning ${autoScanIndex + 1}/${autoScanStars.length}: ${star}…`;
+  await scanStar(star);
+  autoScanIndex++;
+  setTimeout(runNextAutoScan, 1500);
+}
+
+// ── Select planet ─────────────────────────────────────────
+async function selectPlanet(idx) {
+  const resp = await fetch('/api/select-planet', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({index: idx})
+  });
+  document.querySelectorAll('.planet-card').forEach((c,i) => c.classList.toggle('selected', i === idx));
+  loadSystemChart(idx);
+  // AI отчёт по выбранной планете
+  try {
+    const d = await resp.json();
+    if (d && d.planet) fetchAIPlanetReport(d.planet);
+  } catch(e) {}
+}
+
+// ── Load system ───────────────────────────────────────────
+async function loadSystem(hostname) {
+  const res  = await fetch('/api/load-system', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({hostname})
+  });
+  const data = await res.json();
+  if (data.success) {
+    showToast('success', 'System Loaded', hostname);
+    setTimeout(() => location.reload(), 500);
+  }
+}
+
+// ── Delete system ─────────────────────────────────────────
+async function deleteSystem(hostname, btn) {
+  if (!confirm(`Delete ${hostname} from history?`)) return;
+  await fetch('/api/delete-system', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({hostname})
+  });
+  btn.closest('.system-row').remove();
+  delete SYSTEMS[hostname];
+  updateHeaderStats();
+  showToast('info', 'Deleted', hostname);
+}
+
+// ── System chart ──────────────────────────────────────────
+async function loadSystemChart(selIdx) {
+  const wrap = document.getElementById('systemChart');
+  if (!wrap) return;
+  document.getElementById('systemChartLoading').style.display = 'flex';
+  const res  = await fetch('/api/chart/system', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({selected_idx: selIdx || 0})
+  });
+  const fig  = await res.json();
+  document.getElementById('systemChartLoading').style.display = 'none';
+  Plotly.react(wrap, fig.data, fig.layout, {responsive: true, displayModeBar: false});
+}
+
+// ── Star map chart ────────────────────────────────────────
+async function loadStarmap() {
+  const wrap = document.getElementById('starmapChart');
+  if (!wrap) return;
+  document.getElementById('starmapLoading').style.display = 'flex';
+  const res  = await fetch('/api/chart/starmap', {method: 'POST'});
+  const fig  = await res.json();
+  document.getElementById('starmapLoading').style.display = 'none';
+  Plotly.react(wrap, fig.data, fig.layout, {responsive: true, displayModeBar: false});
+}
+
+// ── Sort systems ──────────────────────────────────────────
+function sortSystems(by, btn) {
+  document.querySelectorAll('.sort-bar .sort-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const container = document.getElementById('systemListContainer');
+  const rows      = [...container.querySelectorAll('.system-row')];
+  rows.sort((a, b) => {
+    if (by === 'score')    return +b.dataset.score    - +a.dataset.score;
+    if (by === 'distance') return +a.dataset.distance - +b.dataset.distance;
+    if (by === 'planets')  return +b.dataset.planets  - +a.dataset.planets;
+    if (by === 'name')     return a.dataset.name.localeCompare(b.dataset.name);
+  });
+  rows.forEach(r => container.appendChild(r));
+}
+function sortHistory(by, btn) {
+  document.querySelectorAll('#tab-history .sort-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const container = document.getElementById('historyContainer');
+  const rows      = [...container.querySelectorAll('.system-row')];
+  rows.sort((a, b) => {
+    if (by === 'score')    return +b.dataset.score    - +a.dataset.score;
+    if (by === 'date')     return b.dataset.date.localeCompare(a.dataset.date);
+    if (by === 'planets')  return +b.dataset.planets  - +a.dataset.planets;
+    if (by === 'distance') return +a.dataset.distance - +b.dataset.distance;
+  });
+  rows.forEach(r => container.appendChild(r));
+}
+
+// ── Compare ───────────────────────────────────────────────
+const compareData = {};
+function initCompare() { Object.keys(compareData).length && renderCompareCharts(); }
+function initCompareFromState() {
+  compareList.forEach(name => {
+    const opt = document.querySelector(`[data-name="${name}"]`);
+    if (opt) opt.classList.add('selected');
+    if (customPlanets[name]) compareData[name] = customPlanets[name];
+  });
+  renderCompareUI();
+}
+
+function toggleCompare(name, data) {
+  const idx = compareList.indexOf(name);
+  if (idx !== -1) {
+    compareList.splice(idx, 1);
+    delete compareData[name];
+  } else {
+    if (compareList.length >= 6) { showToast('info', 'Limit reached', 'Max 6 planets'); return; }
+    compareList.push(name);
+    compareData[name] = data;
+  }
+  document.querySelector(`[data-name="${name}"]`)?.classList.toggle('selected', compareList.includes(name));
+  renderCompareUI();
+  renderCompareCharts();
+  if (compareList.length >= 3) {
+    fetch('/api/add-compare', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, planet_data: data})});
+  }
+}
+
+async function addToCompare(name, data) {
+  if (!compareList.includes(name)) {
+    compareList.push(name);
+    compareData[name] = data;
+    await fetch('/api/add-compare', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, planet_data: data})});
+    renderCompareUI();
+    renderCompareCharts();
+    showToast('success', 'Added to Compare', name);
+  }
+}
+
+function renderCompareUI() {
+  const chips = document.getElementById('selectedChips');
+  chips.innerHTML = compareList.map(n =>
+    `<span class="ms-chip" onclick="toggleCompare('${n}',compareData['${n}'] || {})">
+       ${n} <span class="remove">×</span>
+     </span>`
+  ).join('');
+
+  if (compareList.length < 2) {
+    document.getElementById('compareTableWrap').innerHTML =
+      '<div class="text-muted text-sm" style="text-align:center;padding:40px 0">Select at least 2 planets</div>';
+    return;
+  }
+  document.getElementById('compareTableWrap').innerHTML = `
+    <table class="compare-table">
+      <thead><tr><th>Metric</th>${compareList.map(n=>`<th>${n}</th>`).join('')}</tr></thead>
+      <tbody>
+        <tr><td class="text-muted">Radius (R⊕)</td>${compareList.map(n=>`<td>${compareData[n]?.radius||'—'}</td>`).join('')}</tr>
+        <tr><td class="text-muted">Mass (M⊕)</td>${compareList.map(n=>`<td>${compareData[n]?.mass||'—'}</td>`).join('')}</tr>
+        <tr><td class="text-muted">Temp (K)</td>${compareList.map(n=>`<td>${Math.round(compareData[n]?.temp||0)}</td>`).join('')}</tr>
+        <tr><td class="text-muted">ESI</td>${compareList.map(n=>`<td>${compareData[n]?.esi||'—'}</td>`).join('')}</tr>
+        <tr><td class="text-muted">Gravity (g)</td>${compareList.map(n=>`<td>${compareData[n]?.gravity||'—'}</td>`).join('')}</tr>
+        <tr><td class="text-muted">Score</td>${compareList.map(n=>`<td>${compareData[n]?.hab_score !== undefined ? compareData[n].hab_score+'/100' : '—'}</td>`).join('')}</tr>
+      </tbody>
+    </table>`;
+}
+
+async function renderCompareCharts() {
+  if (compareList.length < 2) return;
+  const data = {};
+  compareList.forEach(n => { if (compareData[n]) data[n] = compareData[n]; });
+  if (Object.keys(data).length < 2) return;
+
+  document.getElementById('radarLoading').style.display = 'flex';
+  document.getElementById('barLoading').style.display   = 'flex';
+
+  const [rRes, bRes] = await Promise.all([
+    fetch('/api/chart/compare', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({planets: data, type:'radar'})}),
+    fetch('/api/chart/compare', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({planets: data, type:'bar'})})
+  ]);
+  const [rFig, bFig] = await Promise.all([rRes.json(), bRes.json()]);
+
+  document.getElementById('radarLoading').style.display = 'none';
+  document.getElementById('barLoading').style.display   = 'none';
+  Plotly.react('radarChart', rFig.data, rFig.layout, {responsive:true, displayModeBar:false});
+  Plotly.react('barChart',   bFig.data, bFig.layout, {responsive:true, displayModeBar:false});
+}
+
+async function clearCompare() {
+  compareList = []; Object.keys(compareData).forEach(k => delete compareData[k]);
+  await fetch('/api/clear-compare', {method:'POST'});
+  document.querySelectorAll('.ms-option').forEach(o => o.classList.remove('selected'));
+  renderCompareUI();
+  document.getElementById('radarChart').innerHTML = '';
+  document.getElementById('barChart').innerHTML   = '';
+}
+
+// ── Travel ────────────────────────────────────────────────
+function updateVelLabel() {
+  document.getElementById('velLabel').textContent = document.getElementById('velocitySlider').value + '% c';
+}
+async function updateTravelCalc() {
+  const dist = parseFloat(document.getElementById('travelDest').value) || 4.24;
+  const vel  = parseInt(document.getElementById('velocitySlider').value) || 20;
+  const res  = await fetch('/api/travel', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({distance: dist, velocity_pct: vel})
+  });
+  const d = await res.json();
+  document.getElementById('tr-earth').textContent   = d.earth_time + ' yr';
+  document.getElementById('tr-ship').textContent    = d.ship_time + ' yr';
+  document.getElementById('tr-lorentz').textContent = 'γ = ' + d.lorentz;
+  document.getElementById('tr-fuel').textContent    = d.fuel_kg.toLocaleString();
+  document.getElementById('phase-0-time').textContent = d.phases.accel + ' yr';
+  document.getElementById('phase-1-time').textContent = d.phases.cruise + ' yr';
+  document.getElementById('phase-2-time').textContent = d.phases.accel + ' yr';
+  document.getElementById('phase-3-time').textContent = 'Orbital Insertion';
+}
+async function simulateTravel() {
+  const ship = document.getElementById('travelShip');
+  const line = document.getElementById('travelProgressLine');
+  const pct  = document.getElementById('travelPct');
+  document.querySelectorAll('.phase-item').forEach((p,i) => p.classList.toggle('active', i === 0));
+  for (let i = 0; i <= 100; i++) {
+    await new Promise(r => setTimeout(r, 30));
+    const pos = 5 + (i / 100) * 85;
+    ship.style.left = pos + '%';
+    line.style.width = i + '%';
+    pct.textContent  = i + '%';
+    if (i === 25) document.querySelectorAll('.phase-item').forEach((p,j) => p.classList.toggle('active', j === 1));
+    if (i === 75) document.querySelectorAll('.phase-item').forEach((p,j) => p.classList.toggle('active', j === 2));
+    if (i === 95) document.querySelectorAll('.phase-item').forEach((p,j) => p.classList.toggle('active', j === 3));
+  }
+  showToast('success', '🎉 Arrived!', 'Mission complete — orbital insertion achieved');
+  // AI нарратив о жизни на планете назначения
+  const destSel  = document.getElementById('travelDest');
+  const destName = destSel?.selectedOptions[0]?.dataset.name || destSel?.value || 'the destination';
+  const distLy   = parseFloat(destSel?.value) || 4.24;
+  fetchTravelNarrative(destName, distLy);
+}
+
+// ── Chat ──────────────────────────────────────────────────
+// ── AI Chat command parser ────────────────────────────────────
+const CHAT_COMMANDS = [
+  // Scan a star: "scan Kepler-442", "analyse TRAPPIST-1", "search for Ross 128"
+  {
+    patterns: [
+      /(?:scan|analyze|analyse|search|look up|query|fetch|get data (?:for|on|about)?)\s+(?:star\s+)?([A-Za-z0-9\s'\-\.]+?)(?:\s+system)?$/i,
+      /(?:what (?:planets|data) (?:does|about))\s+([A-Za-z0-9\s'\-\.]+?)(?:\s+have)?/i,
+    ],
+    handler: async (match, typing) => {
+      const starName = match[1].trim();
+      typing.querySelector('.msg-bubble').innerHTML = `🔭 <b>Scanning ${starName}…</b> Querying NASA Archive.`;
+      try {
+        const res = await fetch('/api/scan', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({star_name: starName})
+        });
+        const data = await res.json();
+        if (data.error) {
+          typing.querySelector('.msg-bubble').textContent = `❌ Could not find "${starName}" in the NASA Exoplanet Archive. Try a different spelling, e.g. "Proxima Cen", "TRAPPIST-1".`;
+        } else {
+          const pl = data.planets || [];
+          const best = pl.reduce((a,b) => b.hab_score > a.hab_score ? b : a, pl[0] || {});
+          const hab  = pl.filter(p => p.in_hz).length;
+          typing.querySelector('.msg-bubble').innerHTML =
+            `✅ <b>${data.star?.name || starName}</b> scanned — <b>${pl.length} planet(s)</b> found, <b>${hab} in habitable zone</b>.<br>` +
+            `Best candidate: <b>${best?.name || '—'}</b> (habitability score: <b>${best?.hab_score ?? '—'}</b>).<br>` +
+            `<span style="color:var(--text-faint);font-size:0.78em">System loaded → switch to "System View" tab to explore.</span>`;
+          // Refresh page data
+          if (typeof scanStar === 'function') {
+            SYSTEMS[data.star?.name] = data;
+            updateHeaderStats({});
+          }
+          switchTab('system');
+          showToast(`✓ ${data.star?.name || starName} loaded`, 'success');
+        }
+      } catch(e) {
+        typing.querySelector('.msg-bubble').textContent = `❌ Scan failed. Check your connection.`;
+      }
+    }
+  },
+  // Show analysis: "run analysis", "show my analysis", "analyze my systems"
+  {
+    patterns: [
+      /(?:run|show|open|go to|view)?\s*(?:my\s+)?analysis/i,
+      /analyze (?:my )?(?:systems|data|results)/i,
+      /habitability (?:report|analysis|summary)/i,
+    ],
+    handler: async (match, typing) => {
+      typing.querySelector('.msg-bubble').innerHTML = `📊 Opening <b>Mission Analysis</b>…`;
+      setTimeout(() => { window.location.href = '/analysis?lang=' + lang; }, 800);
+    }
+  },
+  // Show star map: "open star map", "show map"
+  {
+    patterns: [
+      /(?:show|open|go to|view)?\s*(?:the\s+)?(?:star\s+)?map/i,
+      /3d\s+map/i,
+    ],
+    handler: async (match, typing) => {
+      typing.querySelector('.msg-bubble').textContent = '🗺️ Opening Star Map…';
+      switchTab('map');
+      setTimeout(() => loadStarmap && loadStarmap(), 200);
+    }
+  },
+  // Compare: "compare planets", "open compare"
+  {
+    patterns: [ /(?:compare|comparison)\s*(?:planets?|worlds?|tab)?/i ],
+    handler: async (match, typing) => {
+      typing.querySelector('.msg-bubble').textContent = '📏 Opening Planet Comparison…';
+      switchTab('compare');
+    }
+  },
+  // Travel sim: "travel to X", "how long to X"
+  {
+    patterns: [
+      /(?:travel|fly|how long)(?:\s+to)?\s+([A-Za-z0-9\s'\-\.]+)/i,
+    ],
+    handler: async (match, typing) => {
+      typing.querySelector('.msg-bubble').textContent = '🚀 Opening Travel Simulator…';
+      switchTab('travel');
+    }
+  },
+  // NASA Eyes: "open nasa eyes", "solar system view"
+  {
+    patterns: [
+      /nasa\s+eyes/i,
+      /solar system (?:view|sim|3d)/i,
+    ],
+    handler: async (match, typing) => {
+      typing.querySelector('.msg-bubble').textContent = '🌌 Opening NASA Eyes…';
+      switchTab('nasaeyes');
+    }
+  },
+  // List scanned systems: "what systems have I scanned", "show my systems"
+  {
+    patterns: [
+      /(?:list|show|what)\s+(?:my\s+)?(?:scanned\s+)?systems/i,
+      /which\s+stars?\s+(?:have\s+I|did\s+I)\s+scan/i,
+    ],
+    handler: async (match, typing) => {
+      const keys = Object.keys(SYSTEMS);
+      if (!keys.length) {
+        typing.querySelector('.msg-bubble').textContent = "You haven't scanned any systems yet. Try: scan TRAPPIST-1";
+      } else {
+        typing.querySelector('.msg-bubble').innerHTML =
+          `📡 You have scanned <b>${keys.length}</b> system(s):<br>` +
+          keys.map(k => `• <b>${k}</b> — ${SYSTEMS[k].planet_count || 0} planets`).join('<br>');
+      }
+    }
+  },
+];
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg   = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  appendChatMsg('user', msg);
+  const typing = appendChatMsg('bot', '⏳ Thinking…');
+
+  // Check for local commands first
+  for (const cmd of CHAT_COMMANDS) {
+    for (const pat of cmd.patterns) {
+      const m = msg.match(pat);
+      if (m) {
+        await cmd.handler(m, typing);
+        return;
+      }
+    }
+  }
+
+  // Otherwise send to AI backend
+  try {
+    const res  = await fetch('/api/chat', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg, lang})
+    });
+    const data = await res.json();
+    typing.querySelector('.msg-bubble').innerHTML = data.response
+      ? data.response.replace(/\n/g, '<br>')
+      : 'No response.';
+  } catch(e) {
+    typing.querySelector('.msg-bubble').textContent = 'Sorry, connection error.';
+  }
+}
+function sendQuickQ(el) {
+  document.getElementById('chatInput').value = el.textContent;
+  sendChat();
+}
+function appendChatMsg(role, text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.innerHTML = `<div class="msg-bubble">${text}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function updateHeaderStats(stats) {
+  const sysCount = stats?.systems ?? Object.keys(SYSTEMS).length;
+  const plCount  = stats?.planets ?? Object.values(SYSTEMS).reduce((a,s)=>a+s.planet_count,0);
+  const habCount = stats?.habitable ?? Object.values(SYSTEMS).reduce((a,s)=>a+(s.habitable_count||0),0);
+  document.getElementById('hdr-systems').textContent = sysCount;
+  document.getElementById('hdr-planets').textContent = plCount;
+  // Quick stat pills in header
+  const qsSys = document.getElementById('qs-systems');
+  const qsHab = document.getElementById('qs-habitable');
+  const qsPl  = document.getElementById('qs-planets');
+  if (qsSys) qsSys.textContent = sysCount;
+  if (qsHab) qsHab.textContent = habCount;
+  if (qsPl)  qsPl.textContent  = plCount;
+  // Mission log counters
+  const logHab = document.getElementById('log-habitable');
+  const logSys = document.getElementById('log-systems');
+  if (logHab) logHab.textContent = habCount;
+  if (logSys) logSys.textContent = sysCount;
+}
+
+function addLogEntry(name, count, score) {
+  const container = document.getElementById('missionLogContainer');
+  if (!container) return;
+  const empty = container.querySelector('.text-muted');
+  if (empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = `
+    <div class="log-dot"></div>
+    <div class="log-body">
+      <div class="log-time">${new Date().toLocaleTimeString()}</div>
+      <div class="log-action">Scanned ${name}</div>
+      <div class="log-result">${count} planets found · Best: ${score}/100</div>
+    </div>`;
+  container.insertBefore(div, container.firstChild);
+}
+
+// ── News filter ───────────────────────────────────────────
+function filterNews(category, btn) {
+  document.querySelectorAll('#newsFilterBtns .sort-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.news-card').forEach(card => {
+    if (category === 'all') {
+      card.style.display = '';
+    } else {
+      const cats = (card.dataset.category || '').toLowerCase();
+      card.style.display = cats.includes(category) ? '' : 'none';
+    }
+  });
+}
+
+// ── 3D Model filter ──────────────────────────────────────────
+function filterModels(btn, category) {
+  document.querySelectorAll('[data-mcat]').forEach(b => {
+    if (b.tagName === 'BUTTON') b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  document.querySelectorAll('#modelsGrid .model-card').forEach(card => {
+    if (category === 'all') {
+      card.style.display = '';
+    } else {
+      card.style.display = card.dataset.mcat === category ? '' : 'none';
+    }
+  });
+}
+
+// ── NASA Eyes tab ────────────────────────────────────────────
+(function initNasaEyes() {
+  const frame  = document.getElementById('nasaEyesFrame');
+  const loader = document.getElementById('nasaEyesLoader');
+  if (!frame || !loader) return;
+
+  // Hide loader once iframe loads
+  frame.addEventListener('load', () => {
+    setTimeout(() => {
+      loader.style.opacity = '0';
+      loader.style.pointerEvents = 'none';
+    }, 1200);
+  });
+})();
+
+// Shortcut destinations map for NASA Eyes
+const NASA_EYES_URLS = {
+  home:     'https://eyes.nasa.gov/apps/solar-system/#/home?logo=false&shareButton=false&collapseSettingsOptions=true&lighting=natural',
+  mars:     'https://eyes.nasa.gov/apps/solar-system/#/sc_perseverance?logo=false&shareButton=false',
+  jupiter:  'https://eyes.nasa.gov/apps/solar-system/#/jupiter?logo=false&shareButton=false',
+  voyager1: 'https://eyes.nasa.gov/apps/solar-system/#/sc_voyager_1?logo=false&shareButton=false',
+  webb:     'https://eyes.nasa.gov/apps/solar-system/#/sc_jwst?logo=false&shareButton=false',
+};
+
+function nasaEyesGoto(dest) {
+  const frame  = document.getElementById('nasaEyesFrame');
+  const loader = document.getElementById('nasaEyesLoader');
+  if (!frame) return;
+  const url = NASA_EYES_URLS[dest];
+  if (!url) return;
+  if (loader) { loader.style.opacity = '1'; loader.style.pointerEvents = 'auto'; }
+  frame.src = url;
+}
+
+// ── AI Planet Report — запрашивается при выборе планеты ───────────────────────
+let _aiPlanetPending = null;
+
+async function fetchAIPlanetReport(planetData) {
+  const box  = document.getElementById('aiPlanetBox');
+  const txt  = document.getElementById('aiPlanetText');
+  if (!box || !txt) return;
+  const _kz  = window.ATLAS?.lang === 'kz';
+
+  txt.innerHTML = `<span style="color:var(--text-faint);font-style:italic">${_kz ? 'ЖИ талдауы жасалуда…' : 'Generating AI analysis…'}</span>`;
+
+  try {
+    const r = await fetch('/api/planet_report', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({planet: planetData, lang: window.ATLAS?.lang || 'en'})
+    });
+    const d = await r.json();
+    if (d.text && d.text !== 'No AI data available.') {
+      // Typewriter
+      txt.textContent = '';
+      const chars = d.text.split('');
+      let i = 0;
+      function t() {
+        if (i < chars.length) { txt.textContent += chars[i++]; setTimeout(t, 10); }
+      }
+      t();
+    }
+  } catch(e) {
+    txt.innerHTML = '<span style="color:var(--text-faint)">—</span>';
+  }
+}
+
+// ── AI Catalog Hint — при наведении на звезду в списке ───────────────────────
+let _hintCache = {};
+async function showCatalogHint(starName, tooltipEl) {
+  if (!starName || !tooltipEl) return;
+  if (_hintCache[starName]) { tooltipEl.textContent = _hintCache[starName]; return; }
+  tooltipEl.textContent = '…';
+  try {
+    const r = await fetch('/api/catalog_hint', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({star: starName, lang: window.ATLAS?.lang || 'en'})
+    });
+    const d = await r.json();
+    if (d.text) { _hintCache[starName] = d.text; tooltipEl.textContent = d.text; }
+  } catch(e) {}
+}
+
+// Автозапуск планетного отчёта если планета уже загружена при открытии вкладки
+document.addEventListener('DOMContentLoaded', function() {
+  {% if current_planets and selected_planet is not none %}
+  const selPlanet = {{ current_planets[selected_planet]|tojson if current_planets else 'null' }};
+  if (selPlanet) setTimeout(() => fetchAIPlanetReport(selPlanet), 800);
+  {% endif %}
+});
+
+// ── MISSIONS: AI hint при выборе звезды ──────────────────────────────────────
+const _hintTimer = {};
+function onStarSelectChange(starName) {
+  if (!starName || starName.includes('All stars') || starName === '') return;
+  clearTimeout(_hintTimer._t);
+  // Небольшая задержка чтобы не стрелять при быстрой прокрутке
+  _hintTimer._t = setTimeout(() => loadCatalogHint(starName), 400);
+}
+
+async function loadCatalogHint(starName) {
+  const box  = document.getElementById('catalogHintBox');
+  const txt  = document.getElementById('catalogHintText');
+  if (!box || !txt) return;
+  const _kz  = window.ATLAS?.lang === 'kz';
+  // Показать кэш если есть
+  if (_hintCache[starName]) {
+    box.style.display = 'block';
+    txt.textContent = _hintCache[starName];
+    return;
+  }
+  box.style.display = 'block';
+  txt.textContent = _kz ? 'Жасалуда…' : 'Loading hint…';
+  try {
+    const r = await fetch('/api/catalog_hint', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({star: starName, lang: window.ATLAS?.lang || 'en'})
+    });
+    const d = await r.json();
+    if (d.text) {
+      _hintCache[starName] = d.text;
+      // Печатаем
+      txt.textContent = '';
+      const chars = d.text.split('');
+      let i = 0;
+      function type() { if(i < chars.length) { txt.textContent += chars[i++]; setTimeout(type, 12); } }
+      type();
+    } else {
+      box.style.display = 'none';
+    }
+  } catch(e) { box.style.display = 'none'; }
+}
+
+// ── TRAVEL: AI нарратив после симуляции ──────────────────────────────────────
+const _travelNarrCache = {};
+
+async function fetchTravelNarrative(destName, distLy) {
+  const box  = document.getElementById('travelNarrativeBox');
+  const txt  = document.getElementById('travelNarrativeText');
+  if (!box || !txt) return;
+  const _kz  = window.ATLAS?.lang === 'kz';
+  const key  = destName + '_' + distLy;
+
+  box.style.display = 'block';
+  if (_travelNarrCache[key]) { txt.textContent = _travelNarrCache[key]; return; }
+  txt.textContent = _kz ? 'Жасалуда…' : 'Generating narrative…';
+
+  try {
+    const r = await fetch('/api/ask_gemini', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        question: `Describe what life would be like for a crew arriving at ${destName}, ${distLy} light-years away.`,
+        mode: 'travel',
+        lang: window.ATLAS?.lang || 'en'
+      })
+    });
+    const d = await r.json();
+    if (d.text) {
+      _travelNarrCache[key] = d.text;
+      txt.textContent = '';
+      const chars = d.text.split('');
+      let i = 0;
+      function type() { if(i<chars.length){txt.textContent+=chars[i++];setTimeout(type,10);} }
+      type();
+    }
+  } catch(e) { txt.textContent = ''; box.style.display='none'; }
+}
+
+// ── STAR MAP: AI профиль системы при клике на кнопку ✨ AI ────────────────────
+const _starAICache = {};
+
+async function toggleStarAI(hostname, btn) {
+  const safeId = hostname.replace(/[\s-]/g, '_');
+  const box    = document.getElementById('starai-' + safeId);
+  const txtEl  = box ? box.querySelector('[class*="starai-text"]') : null;
+  if (!box || !txtEl) return;
+
+  // Тоггл
+  if (box.style.display === 'block') { box.style.display='none'; btn.textContent='✨ AI'; return; }
+  box.style.display = 'block';
+  btn.textContent   = '✕ Close';
+
+  if (_starAICache[hostname]) { txtEl.textContent = _starAICache[hostname]; return; }
+  const _kz = window.ATLAS?.lang === 'kz';
+  txtEl.textContent = _kz ? 'Жасалуда…' : 'Generating…';
+
+  try {
+    const r = await fetch('/api/catalog_hint', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({star: hostname, lang: window.ATLAS?.lang || 'en'})
+    });
+    const d = await r.json();
+    if (d.text) {
+      _starAICache[hostname] = d.text;
+      txtEl.textContent = '';
+      const chars = d.text.split('');
+      let i = 0;
+      function type() { if(i<chars.length){txtEl.textContent+=chars[i++];setTimeout(type,12);} }
+      type();
+    }
+  } catch(e) { txtEl.textContent = '—'; }
+}
+</script>
+{% endblock %}

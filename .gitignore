@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+venv/
+*.egg-info/
+dist/
+build/
+.DS_Store
+restored_from_pyc.py
+test.py
+test5.py
+advanced_app.py
+ui-ux-pro-max-skill-main/
+claude.exe

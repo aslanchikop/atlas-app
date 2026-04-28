@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/Users/user/advanced_app/*.py)",
+      "Bash(ls -lh /c/Users/user/advanced_app/*.pkl /c/Users/user/advanced_app/*.json /c/Users/user/advanced_app/*.png /c/Users/user/advanced_app/*.jpg)",
+      "Bash(\"C:/Users/user/AppData/Local/Programs/Python/Python314/python.exe\" -c \"import app; print\\(''OK''\\)\")",
+      "Bash(curl -s http://127.0.0.1:5000/ -o /dev/null -w \"%{http_code}\")",
+      "Bash(py -W ignore -c \"import app; print\\(''life_potential filter registered:'', ''life_potential'' in app.app.jinja_env.filters\\)\")",
+      "Bash(grep -c \"lang == ''en''\" \"C:\\\\Users\\\\user\\\\advanced_app\\\\templates\\\\explore.html\" \"C:\\\\Users\\\\user\\\\advanced_app\\\\templates\\\\analysis.html\")",
+      "Bash(py -W ignore -c ':*)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK — no syntax errors'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"from jinja2 import Environment; env = Environment\\(\\); [print\\(f+': OK'\\) or None for f in ['templates/analysis.html','templates/share.html'] if env.parse\\(open\\(f, encoding='utf-8'\\).read\\(\\)\\) or True]\")",
+      "Bash(python -c \"from jinja2 import Environment; env = Environment\\(\\); print\\(env.parse\\(open\\('templates/analysis.html',encoding='utf-8'\\).read\\(\\)\\) and 'OK'\\)\")",
+      "Bash(where python:*)",
+      "Bash(py -c \"import ast; ast.parse\\(open\\('app.py',encoding='utf-8'\\).read\\(\\)\\); print\\('app.py: OK'\\)\")",
+      "Bash(py -c \"from jinja2 import Environment; env=Environment\\(\\); env.parse\\(open\\('templates/analysis.html',encoding='utf-8'\\).read\\(\\)\\); print\\('analysis.html: OK'\\); env.parse\\(open\\('templates/share.html',encoding='utf-8'\\).read\\(\\)\\); print\\('share.html: OK'\\)\")",
+      "Bash(py -c \"import ast; ast.parse\\(open\\('app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('app.py: OK'\\)\")",
+      "Bash(py -c ':*)",
+      "Bash(py -c \"import ast; ast.parse\\(open\\('C:/Users/user/advanced_app/app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(py -c \"import ast; ast.parse\\(open\\('C:/Users/user/advanced_app/app.py', encoding='utf-8'\\).read\\(\\)\\); print\\('app.py: OK'\\)\")",
+      "WebFetch(domain:ai.google.dev)"
+    ]
+  }
+}

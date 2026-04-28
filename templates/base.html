@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ATLAS — Exoplanet Research{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@1,400;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/atlas.css') }}?v={{ static_ver }}">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+<!-- Star particle canvas -->
+<canvas id="stars-canvas"></canvas>
+
+<!-- Page background -->
+<div class="page-bg {% block bg_class %}inner-bg{% endblock %}">
+  <div class="bg-img" {% block bg_style %}{% endblock %}></div>
+</div>
+
+<!-- ── CMD+K Search Overlay ─────────────────────────────── -->
+<div class="search-overlay" id="searchOverlay" onclick="closeSearch(event)">
+  <div class="search-modal" id="searchModal">
+    <div class="search-input-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" id="searchInput" placeholder="Search systems, planets, topics…"
+             oninput="runSearch(this.value)" onkeydown="searchNav(event)">
+      <span class="search-kbd">ESC</span>
+    </div>
+    <div class="search-results" id="searchResults">
+      <div class="search-empty">{% if lang == 'en' %}Type to search across all systems and topics{% else %}Жүйелер мен тақырыптар бойынша іздеу үшін теріңіз{% endif %}</div>
+    </div>
+    <div class="search-footer">
+      <span class="search-hint"><kbd>↑↓</kbd> Navigate</span>
+      <span class="search-hint"><kbd>↵</kbd> Open</span>
+      <span class="search-hint"><kbd>ESC</kbd> Close</span>
+    </div>
+  </div>
+</div>
+
+<div class="site-wrapper">
+
+  <!-- ── Navbar — fully transparent ─────────────────────── -->
+  <nav class="navbar" id="mainNav">
+    <a href="/?lang={{ lang }}" class="nav-brand">
+      <span>🛰️</span>
+      <span>ATLAS</span>
+      <span class="brand-dot"></span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="/?lang={{ lang }}"            class="{% if request.path == '/' %}active{% endif %}">{% if lang == 'en' %}Home{% else %}Басты бет{% endif %}</a></li>
+      <li><a href="/explore?lang={{ lang }}"      class="{% if request.path == '/explore' %}active{% endif %}">{% if lang == 'en' %}Explore{% else %}Зерттеу{% endif %}</a></li>
+      <li><a href="/analysis?lang={{ lang }}"     class="{% if request.path == '/analysis' %}active{% endif %}">{% if lang == 'en' %}Analysis{% else %}Талдау{% endif %}</a></li>
+      <li><a href="/encyclopedia?lang={{ lang }}" class="{% if request.path == '/encyclopedia' %}active{% endif %}">{% if lang == 'en' %}Reference{% else %}Анықтама{% endif %}</a></li>
+      <li><a href="/about?lang={{ lang }}"        class="{% if request.path == '/about' %}active{% endif %}">{% if lang == 'en' %}About{% else %}Туралы{% endif %}</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <span class="nav-coord" id="navTime"></span>
+      <!-- Search trigger -->
+      <button class="nav-search-btn" onclick="openSearch()" title="Search (Ctrl+K)">
+        <span>⌕</span>
+        <span class="nav-search-label">{% if lang == 'en' %}Search{% else %}Іздеу{% endif %}</span>
+        <kbd class="nav-search-kbd">Ctrl K</kbd>
+      </button>
+      {% if lang == 'en' %}
+        <a href="{{ request.path }}?lang=kz" class="btn-lang">🇰🇿 KZ</a>
+      {% else %}
+        <a href="{{ request.path }}?lang=en" class="btn-lang">🇬🇧 EN</a>
+      {% endif %}
+      <a href="/explore?lang={{ lang }}" class="btn-cta">{% if lang == 'en' %}Explore →{% else %}Зерттеу →{% endif %}</a>
+    </div>
+  </nav>
+
+  <!-- ── Page Content ─────────────────────────────────────── -->
+  {% block content %}{% endblock %}
+
+  <!-- ── Footer ───────────────────────────────────────────── -->
+  {% block footer %}
+  <footer class="footer">
+    <div class="footer-logo">🛰️ ATLAS</div>
+    <p>{% if lang == 'en' %}Autonomous Terrestrial Life Analysis System{% else %}Автономды Жердегі Тіршілікті Талдау Жүйесі{% endif %}</p>
+    <p style="margin-top:4px;">{% if lang == 'en' %}Diploma Project 2024–2025 · Powered by NASA Exoplanet Archive{% else %}Диплом жобасы 2024–2025 · NASA Экзопланета мұрағатымен жұмыс істейді{% endif %}</p>
+  </footer>
+  {% endblock %}
+
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ── Laika Chat Panel ──────────────────────────────────── -->
+<div class="lk-panel" id="laikaPanel">
+  <div class="lk-panel-hdr">
+    <div class="lk-panel-avatar">🐾</div>
+    <div class="lk-panel-info">
+      <div class="lk-panel-name">Laika</div>
+      <div class="lk-panel-status" id="laikaPanelStatus">
+        ● {% if lang == 'kz' %}Онлайн — Ғарыш Көмекшісі{% else %}Online — Space Assistant{% endif %}
+      </div>
+    </div>
+    <button class="lk-panel-close" id="laikaPanelClose" title="{% if lang == 'kz' %}Жабу{% else %}Close{% endif %}">✕</button>
+  </div>
+  <div class="lk-panel-msgs" id="laikaPanelMsgs"></div>
+  <div class="lk-panel-foot">
+    <input class="lk-panel-input" id="laikaPanelInput" type="text"
+           placeholder="{% if lang == 'kz' %}Лайкадан сұраңыз...{% else %}Ask Laika anything...{% endif %}"
+           maxlength="300" autocomplete="off">
+    <button class="lk-panel-send" id="laikaPanelSend" title="{% if lang == 'kz' %}Жіберу{% else %}Send{% endif %}">↑</button>
+  </div>
+</div>
+
+<!-- ── Laika — Space Dog Mascot ─────────────────────────── -->
+<div class="lk-wrap" id="laikaWrap" title="Click to chat with Laika 🐾">
+  <div class="lk-bubble" id="laikaBubble"></div>
+  <div class="lk-visual" id="laikaVisual">
+    <div class="lk-dog" id="laikaDog">
+      <div class="lk-helmet">
+        <div class="lk-ear lk-ear-l"></div>
+        <div class="lk-ear lk-ear-r"></div>
+        <div class="lk-head">
+          <div class="lk-eye lk-eye-l"></div>
+          <div class="lk-eye lk-eye-r"></div>
+          <div class="lk-nose"></div>
+        </div>
+      </div>
+      <div class="lk-suit">
+        <div class="lk-arm lk-arm-l"></div>
+        <div class="lk-arm lk-arm-r"></div>
+        <div class="lk-tail"></div>
+        <span class="lk-badge">🐾</span>
+        <div class="lk-legs">
+          <div class="lk-leg"></div>
+          <div class="lk-leg"></div>
+        </div>
+      </div>
+    </div>
+    <div class="lk-name">Laika</div>
+  </div>
+</div>
+
+<style>
+/* ── Laika Chat Panel ── */
+.lk-panel {
+  position: fixed;
+  bottom: 220px; right: 14px;
+  width: 300px; height: 420px;
+  background: rgba(9, 5, 22, 0.97);
+  border: 1px solid rgba(110,75,255,0.4);
+  border-radius: 18px;
+  display: flex; flex-direction: column;
+  z-index: 9998;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.65), 0 0 0 1px rgba(110,75,255,0.12);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transform: translateY(16px) scale(0.94);
+  transform-origin: bottom right;
+  transition: opacity 0.25s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+}
+.lk-panel.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+
+.lk-panel-hdr {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 14px 11px;
+  border-bottom: 1px solid rgba(110,75,255,0.2);
+  flex-shrink: 0;
+}
+.lk-panel-avatar {
+  width: 38px; height: 38px; font-size: 20px;
+  background: rgba(110,75,255,0.15);
+  border: 1px solid rgba(110,75,255,0.3);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.lk-panel-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px; font-weight: 700; color: #e0d8ff;
+}
+.lk-panel-status { font-size: 10.5px; color: rgba(150,220,150,0.8); margin-top: 1px; }
+.lk-panel-close {
+  margin-left: auto; background: none; border: none;
+  color: rgba(180,170,220,0.45); font-size: 16px; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s, background 0.2s;
+}
+.lk-panel-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+.lk-panel-msgs {
+  flex: 1; overflow-y: auto;
+  padding: 12px 12px 6px;
+  display: flex; flex-direction: column; gap: 10px;
+  scroll-behavior: smooth;
+}
+.lk-panel-msgs::-webkit-scrollbar { width: 3px; }
+.lk-panel-msgs::-webkit-scrollbar-thumb { background: rgba(110,75,255,0.3); border-radius: 2px; }
+
+.lk-msg { display: flex; flex-direction: column; max-width: 86%; }
+.lk-msg-user  { align-self: flex-end;  align-items: flex-end; }
+.lk-msg-laika { align-self: flex-start; align-items: flex-start; }
+.lk-msg-label { font-size: 9.5px; color: rgba(150,140,200,0.45); margin-bottom: 3px; font-family: 'Inter', sans-serif; }
+.lk-msg-bubble {
+  padding: 8px 12px; font-size: 12.5px;
+  font-family: 'Inter', sans-serif; line-height: 1.5;
+}
+.lk-msg-user  .lk-msg-bubble {
+  background: rgba(100,60,220,0.75); color: #ede8ff;
+  border-radius: 14px 14px 4px 14px;
+}
+.lk-msg-laika .lk-msg-bubble {
+  background: rgba(25,16,52,0.9); color: #ddd8ff;
+  border: 1px solid rgba(110,75,255,0.25);
+  border-radius: 14px 14px 14px 4px;
+}
+
+/* Typing indicator */
+.lk-typing .lk-msg-bubble { display: flex; gap: 5px; align-items: center; padding: 11px 14px; }
+.lk-dot {
+  width: 7px; height: 7px;
+  background: rgba(150,130,255,0.7); border-radius: 50%;
+  animation: lk-dot-pulse 1.2s ease-in-out infinite;
+}
+.lk-dot:nth-child(2) { animation-delay: 0.2s; }
+.lk-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes lk-dot-pulse {
+  0%,80%,100% { transform: scale(0.6); opacity: 0.4; }
+  40%          { transform: scale(1.15); opacity: 1; }
+}
+
+.lk-panel-foot {
+  display: flex; gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(110,75,255,0.18);
+  flex-shrink: 0;
+}
+.lk-panel-input {
+  flex: 1;
+  background: rgba(25,16,52,0.8);
+  border: 1px solid rgba(110,75,255,0.3);
+  border-radius: 11px; color: #e0d8ff;
+  font-size: 12.5px; font-family: 'Inter', sans-serif;
+  padding: 8px 12px; outline: none;
+  transition: border-color 0.2s;
+}
+.lk-panel-input:focus { border-color: rgba(110,75,255,0.7); }
+.lk-panel-input::placeholder { color: rgba(150,140,200,0.38); }
+.lk-panel-send {
+  width: 38px; height: 38px; flex-shrink: 0;
+  background: rgba(100,60,220,0.85); border: none; border-radius: 11px;
+  color: #fff; font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, transform 0.1s;
+}
+.lk-panel-send:hover  { background: rgba(110,70,240,1); }
+.lk-panel-send:active { transform: scale(0.9); }
+.lk-panel-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Suggest chips */
+.lk-suggests {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  padding: 0 12px 8px;
+  flex-shrink: 0;
+}
+.lk-suggest {
+  font-size: 10.5px; font-family: 'Inter', sans-serif;
+  color: rgba(160,140,255,0.8);
+  background: rgba(110,75,255,0.12);
+  border: 1px solid rgba(110,75,255,0.25);
+  border-radius: 20px; padding: 4px 10px;
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.lk-suggest:hover { background: rgba(110,75,255,0.28); color: #e0d8ff; }
+
+/* ── Laika wrapper ── */
+.lk-wrap {
+  position: fixed;
+  bottom: 22px; right: 22px;
+  z-index: 9999;
+  cursor: grab;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.lk-wrap:active { cursor: grabbing; }
+
+.lk-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.lk-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px; font-weight: 600;
+  color: rgba(200,190,255,0.55);
+  letter-spacing: 0.08em;
+  margin-top: 3px;
+}
+
+/* ── Dog container ── */
+.lk-dog {
+  position: relative;
+  width: 78px;
+  animation: lk-float 3.5s ease-in-out infinite;
+}
+.lk-wrap:hover .lk-dog { filter: drop-shadow(0 0 10px rgba(160,120,255,0.65)); }
+
+/* ── Helmet ── */
+.lk-helmet {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, rgba(210,235,255,0.45) 0%, rgba(120,180,255,0.1) 100%);
+  border: 2.5px solid rgba(160,210,255,0.65);
+  box-shadow: inset 0 0 16px rgba(80,160,255,0.1), 0 0 20px rgba(80,160,255,0.15);
+  position: relative;
+  margin: 0 auto 1px;
+}
+
+/* ── Ears ── */
+.lk-ear {
+  position: absolute;
+  width: 20px; height: 27px;
+  background: #b07040;
+  border-radius: 50% 50% 20% 20%;
+  top: 3px; z-index: 0;
+}
+.lk-ear-l { left: 7px;  transform: rotate(-18deg); }
+.lk-ear-r { right: 7px; transform: rotate(18deg); }
+
+/* ── Head ── */
+.lk-head {
+  width: 55px; height: 52px;
+  background: #d0904e;
+  border-radius: 50% 50% 42% 42%;
+  position: absolute;
+  bottom: 5px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+/* ── Eyes ── */
+.lk-eye {
+  width: 13px; height: 13px;
+  background: #12101e;
+  border-radius: 50%;
+  position: absolute;
+  top: 16px;
+  transition: height 0.3s, border-radius 0.3s, top 0.3s;
+}
+.lk-eye::after {
+  content: '';
+  width: 4px; height: 4px;
+  background: #fff; border-radius: 50%;
+  position: absolute;
+  top: 2px; left: 3px;
+}
+.lk-eye-l { left: 7px; }
+.lk-eye-r { right: 7px; }
+
+.lk-dog.lk-sleeping .lk-eye { height: 2px; border-radius: 2px; top: 20px; }
+.lk-dog.lk-sleeping .lk-eye::after { display: none; }
+
+/* ── Nose ── */
+.lk-nose {
+  width: 16px; height: 10px;
+  background: #1e1010;
+  border-radius: 40% 40% 50% 50%;
+  position: absolute;
+  bottom: 10px; left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ── Spacesuit ── */
+.lk-suit {
+  width: 60px; height: 40px;
+  background: linear-gradient(170deg, #f4f4f4 0%, #d6d6d6 100%);
+  border: 1.5px solid #b4b4c4;
+  border-radius: 20px 20px 14px 14px;
+  margin: -2px auto 0;
+  position: relative;
+}
+.lk-badge {
+  position: absolute;
+  font-size: 13px;
+  top: 10px; left: 50%;
+  transform: translateX(-50%);
+  line-height: 1;
+}
+
+/* ── Arms ── */
+.lk-arm {
+  width: 12px; height: 22px;
+  background: linear-gradient(180deg, #ebebeb 0%, #d4d4d4 100%);
+  border: 1.5px solid #b4b4c4;
+  border-radius: 6px;
+  position: absolute; top: 6px;
+}
+.lk-arm-l { left: -10px;  transform: rotate(30deg);  transform-origin: top center; }
+.lk-arm-r { right: -10px; transform: rotate(-30deg); transform-origin: top center; }
+.lk-arm::after {
+  content: '';
+  width: 14px; height: 9px;
+  background: #c08040; border-radius: 50%;
+  position: absolute;
+  bottom: -4px; left: -1px;
+}
+
+/* ── Tail ── */
+.lk-tail {
+  width: 24px; height: 10px;
+  background: #a06030;
+  border-radius: 10px 10px 10px 4px;
+  position: absolute;
+  right: -8px; top: 10px;
+  transform-origin: left center;
+  animation: lk-wag 0.45s ease-in-out infinite alternate;
+}
+
+/* ── Legs ── */
+.lk-legs {
+  display: flex;
+  justify-content: center;
+  gap: 7px; margin-top: -1px;
+}
+.lk-leg {
+  width: 19px; height: 14px;
+  background: linear-gradient(180deg, #d8d8d8 0%, #c8c8c8 100%);
+  border: 1.5px solid #b4b4c4;
+  border-radius: 0 0 7px 7px;
+  position: relative;
+  transform-origin: top center;
+}
+.lk-leg::after {
+  content: '';
+  width: 22px; height: 9px;
+  background: #c08040; border-radius: 50%;
+  position: absolute;
+  bottom: -4px; left: -1px;
+}
+
+/* ── Speech bubble ── */
+.lk-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: rgba(14, 8, 32, 0.95);
+  color: #ddd8ff;
+  border: 1px solid rgba(130, 90, 255, 0.45);
+  border-radius: 12px 12px 4px 12px;
+  padding: 8px 13px;
+  font-size: 12.5px;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.45;
+  max-width: 200px;
+  white-space: normal;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  opacity: 0;
+  transform: scale(0.82) translateY(6px);
+  transform-origin: bottom right;
+  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+  z-index: 1;
+}
+.lk-bubble.show { opacity: 1; transform: scale(1) translateY(0); }
+
+/* ── Heart particles ── */
+.lk-heart {
+  position: fixed;
+  font-size: 20px;
+  pointer-events: none;
+  z-index: 10001;
+  animation: lk-heart-fly 1.1s ease-out forwards;
+}
+@keyframes lk-heart-fly {
+  0%   { transform: translateY(0) scale(0.5) rotate(-10deg); opacity: 1; }
+  100% { transform: translateY(-70px) scale(1.3) rotate(12deg); opacity: 0; }
+}
+
+/* ── Keyframes ── */
+@keyframes lk-float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-9px); }
+}
+@keyframes lk-wag {
+  from { transform: rotate(-30deg); }
+  to   { transform: rotate(24deg); }
+}
+@keyframes lk-bounce {
+  0%,100% { transform: translateY(0) scale(1); }
+  35%      { transform: translateY(-26px) scale(1.07); }
+  65%      { transform: translateY(-11px) scale(1.02); }
+}
+@keyframes lk-excited {
+  0%   { transform: translateY(0) rotate(0deg) scale(1); }
+  18%  { transform: translateY(-28px) rotate(-11deg) scale(1.1); }
+  42%  { transform: translateY(-28px) rotate(11deg) scale(1.1); }
+  62%  { transform: translateY(-13px) rotate(-4deg); }
+  82%  { transform: translateY(-5px); }
+  100% { transform: translateY(0) rotate(0deg) scale(1); }
+}
+@keyframes lk-tilt {
+  0%,100% { transform: rotate(0deg); }
+  40%      { transform: rotate(-16deg); }
+  80%      { transform: rotate(7deg); }
+}
+@keyframes lk-spin {
+  from { transform: rotate(0deg) scale(1.12); }
+  to   { transform: rotate(360deg) scale(1.12); }
+}
+@keyframes lk-sniff {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  35%      { transform: translateY(8px) rotate(9deg); }
+  65%      { transform: translateY(9px) rotate(-6deg); }
+}
+@keyframes lk-walk-body {
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-5px) rotate(2deg); }
+}
+@keyframes lk-leg-swing {
+  0%,100% { transform: rotate(-32deg); }
+  50%      { transform: rotate(32deg); }
+}
+
+/* ── State classes ── */
+.lk-dog.lk-anim-bounce  { animation: lk-bounce  0.75s ease forwards; }
+.lk-dog.lk-anim-excited { animation: lk-excited 1.4s ease forwards; }
+.lk-dog.lk-anim-tilt    { animation: lk-tilt    0.65s ease forwards; }
+.lk-dog.lk-anim-spin    { animation: lk-spin    0.8s ease forwards; }
+.lk-dog.lk-anim-sniff   { animation: lk-sniff   1.1s ease forwards; }
+
+.lk-dog.lk-walking { animation: lk-walk-body 0.3s ease-in-out infinite !important; }
+.lk-dog.lk-walking .lk-leg:nth-child(1) { animation: lk-leg-swing 0.3s linear infinite; }
+.lk-dog.lk-walking .lk-leg:nth-child(2) { animation: lk-leg-swing 0.3s linear infinite reverse; }
+
+.lk-dog.lk-sleeping { animation: lk-float 7s ease-in-out infinite; opacity: 0.7; }
+</style>
+
+<script>
+(function() {
+  const LANG = "{{ lang }}" === 'kz' ? 'kz' : 'en';
+  const M = {
+    en: {
+      greet:      ['Woof! Ready to explore! 🚀', 'Laika reporting for duty! 🐾', 'All systems go! 🛸', 'Let\'s find life out there! 🌍'],
+      scan:       ['New star system! 🔭', 'Scanning... woof!', 'What a find! ⭐'],
+      hz:         ['HABITABLE ZONE!! 🌍🎉', 'Life could exist there!!', 'WOOF WOOF!! 🐾🌍'],
+      pet:        ['Woof woof!! 💕', 'Best human ever! ✨', 'More pets please 🐾', 'My tail goes brrr 💕'],
+      sleep:      ['Zzz... 💤', 'dreaming of planets... 💤', '*snoring in orbit* 💤'],
+      wake:       ['Huh?! Woof! 👀', 'I\'m awake! 🚀', 'Oh! Did you find a planet?! 👀'],
+      achieve:    ['Achievement unlocked! ⭐', 'You did it! 🏆', 'Amazing work! 🎖️'],
+      thought:    ['I wonder if dogs exist on other planets 🐕', 'Space is empty... like my bowl 😢', 'I was first Earthling in orbit! 🛸', 'TRAPPIST-1 has 7 planets! 🔭', 'Proxima Centauri b is only 4.24 ly! 🌍', '*chases cosmic ray* 🐾', 'Kepler-442b has ESI 0.84! 🌍', 'Click me to chat! 💬'],
+      panelGreet: ['Woof! What can I help you with? 🚀', 'Arf! Ask me anything about space! 🔭', 'Laika here! Ready to assist! 🐾', 'Woof woof! Ask away! What do you want to know? 🌍'],
+      suggests:   ['What is TRAPPIST-1?', 'Best habitable planet?', 'How does ESI work?', 'What is this site?', 'Tell me a space fact!'],
+      thinking:   ['Sniffing the data... 🔭', 'Computing... *wags tail* 🐾', 'Searching the cosmos... 🌌', 'One moment, Laika is thinking... 🤔'],
+    },
+    kz: {
+      greet:      ['Хав! Зерттеуге дайынмын! 🚀', 'Лайка осында! 🌍', 'Жүйе дайын! 🛸'],
+      scan:       ['Жаңа жұлдыз жүйесі! 🔭', 'Сканерлеу... хав!', 'Табылды! ⭐'],
+      hz:         ['ТІРШІЛІК АЙМАҒЫ!! 🌍🎉', 'Мұнда тіршілік болуы мүмкін!', 'Хав хав!! 🐾'],
+      pet:        ['Хав хав!! 💕', 'Ең жақсы адам! ✨', 'Тағы сипаңыз 🐾'],
+      sleep:      ['Ззз... 💤', 'планеталар туралы арман 💤'],
+      wake:       ['Ха? Хав! 👀', 'Оянып кеттім! 🚀'],
+      achieve:    ['Жетістік ашылды! ⭐', 'Істедіңіз! 🏆', 'Керемет! 🎖️'],
+      thought:    ['Басқа планеталарда иттер бар ма? 🐕', 'Мен ғарышқа бірінші барғанмын! 🛸', 'TRAPPIST-1-де 7 планета! 🔭', 'Мені басу арқылы чат! 💬'],
+      panelGreet: ['Хав! Не білгіңіз келеді? 🚀', 'Лайка осында! Сұраңыз! 🐾', 'Ғарыш туралы не сұрайсыз? 🔭'],
+      suggests:   ['TRAPPIST-1 дегеніміз не?', 'ESI қалай есептеледі?', 'Сайт туралы айт', 'Ғарыш туралы факт!'],
+      thinking:   ['Деректерді иіскеп жатыр... 🔭', 'Есептеуде... *құйрығын бұлғайды* 🐾', 'Ойланып жатыр... 🤔'],
+    },
+  }[LANG];
+
+  const wrap   = document.getElementById('laikaWrap');
+  const visual = document.getElementById('laikaVisual');
+  const dog    = document.getElementById('laikaDog');
+  const bubble = document.getElementById('laikaBubble');
+  const panel  = document.getElementById('laikaPanel');
+
+  // ── Position ─────────────────────────────────────────────
+  let posX = window.innerWidth  - 110;
+  let posY = window.innerHeight - 210;
+  let sleeping = false, moving = false, dragging = false, chatOpen = false;
+  let sleepTimer, bubbleTimer, wanderTimer, thoughtTimer, clickTimer;
+
+  wrap.style.bottom = 'auto'; wrap.style.right = 'auto';
+  wrap.style.left = posX + 'px'; wrap.style.top = posY + 'px';
+
+  const HOME_X = () => window.innerWidth  - 115;
+  const HOME_Y = () => window.innerHeight - 215;
+
+  function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  // ── Bubble ───────────────────────────────────────────────
+  function say(text, ms = 3200) {
+    if (chatOpen) return;
+    bubble.textContent = text;
+    if (posX > window.innerWidth * 0.55) {
+      bubble.style.right = '0'; bubble.style.left = 'auto';
+      bubble.style.borderRadius = '12px 12px 4px 12px';
+    } else {
+      bubble.style.left = '0'; bubble.style.right = 'auto';
+      bubble.style.borderRadius = '12px 12px 12px 4px';
+    }
+    bubble.classList.add('show');
+    clearTimeout(bubbleTimer);
+    bubbleTimer = setTimeout(() => bubble.classList.remove('show'), ms);
+  }
+
+  // ── React ─────────────────────────────────────────────────
+  function react(anim, dur = 1500) {
+    if (sleeping && anim !== 'bounce') return;
+    dog.classList.remove('lk-anim-bounce','lk-anim-excited','lk-anim-tilt','lk-anim-spin','lk-anim-sniff');
+    void dog.offsetWidth;
+    dog.classList.add('lk-anim-' + anim);
+    setTimeout(() => dog.classList.remove('lk-anim-' + anim), dur);
+    resetSleep();
+  }
+
+  function face(right) { visual.style.transform = right ? '' : 'scaleX(-1)'; }
+
+  // ── Movement ─────────────────────────────────────────────
+  function moveTo(tx, ty, speed = 95) {
+    if (dragging || chatOpen) return;
+    const dx = tx - posX, dy = ty - posY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if (dist < 25) { moving = false; scheduleWander(); return; }
+    moving = true; face(dx > 0);
+    dog.classList.remove('lk-sleeping'); dog.classList.add('lk-walking');
+    const dur = Math.max(700, (dist / speed) * 1000);
+    wrap.style.transition = `left ${dur}ms linear, top ${dur}ms linear`;
+    wrap.style.left = tx + 'px'; wrap.style.top = ty + 'px';
+    posX = tx; posY = ty;
+    clearTimeout(wanderTimer);
+    wanderTimer = setTimeout(() => {
+      dog.classList.remove('lk-walking'); moving = false;
+      if (Math.random() < 0.3) { react('sniff', 1100); if (Math.random() < 0.5) say(rand(M.thought), 4000); }
+      scheduleWander();
+    }, dur + 50);
+  }
+
+  function randomPos() {
+    const pad = 90, W = window.innerWidth, H = window.innerHeight;
+    return { x: pad + Math.random() * (W - pad*2 - 85), y: pad + Math.random() * (H - pad*2 - 170) };
+  }
+
+  function scheduleWander() {
+    clearTimeout(wanderTimer);
+    if (sleeping || dragging || chatOpen) return;
+    wanderTimer = setTimeout(() => {
+      if (!sleeping && !dragging && !chatOpen) moveTo(...Object.values(randomPos()));
+    }, 2800 + Math.random() * 4500);
+  }
+
+  // ── Sleep ─────────────────────────────────────────────────
+  function resetSleep() {
+    clearTimeout(sleepTimer);
+    if (sleeping) { sleeping = false; dog.classList.remove('lk-sleeping'); bubble.classList.remove('show'); }
+    sleepTimer = setTimeout(() => {
+      if (chatOpen) return;
+      sleeping = true; moving = false;
+      clearTimeout(wanderTimer); dog.classList.remove('lk-walking'); dog.classList.add('lk-sleeping');
+      say(rand(M.sleep), 999999);
+    }, 55000);
+  }
+
+  function scheduleThought() {
+    thoughtTimer = setTimeout(() => {
+      if (!sleeping && !moving && !chatOpen) say(rand(M.thought), 4000);
+      scheduleThought();
+    }, 16000 + Math.random() * 18000);
+  }
+
+  // ── Hearts ───────────────────────────────────────────────
+  function spawnHearts() {
+    ['💕','❤️','💖','✨','⭐','🐾'].slice(0,5).forEach((ic, i) => {
+      setTimeout(() => {
+        const h = document.createElement('div');
+        h.className = 'lk-heart';
+        h.textContent = ['💕','❤️','💖','✨','⭐','🐾'][Math.floor(Math.random()*6)];
+        h.style.left = (posX + 14 + Math.random()*52) + 'px';
+        h.style.top  = (posY + 20) + 'px';
+        document.body.appendChild(h);
+        setTimeout(() => h.remove(), 1200);
+      }, i * 110);
+    });
+  }
+
+  // ── Chat Panel ───────────────────────────────────────────
+  const msgsEl  = document.getElementById('laikaPanelMsgs');
+  const inputEl = document.getElementById('laikaPanelInput');
+  const sendEl  = document.getElementById('laikaPanelSend');
+  let panelInited = false;
+
+  function openPanel() {
+    chatOpen = true;
+    clearTimeout(wanderTimer); clearTimeout(sleepTimer);
+    bubble.classList.remove('show');
+    if (sleeping) { sleeping = false; dog.classList.remove('lk-sleeping'); }
+    dog.classList.remove('lk-walking');
+    // Move Laika home
+    const hx = HOME_X(), hy = HOME_Y();
+    wrap.style.transition = 'left 0.5s ease, top 0.5s ease';
+    wrap.style.left = hx + 'px'; wrap.style.top = hy + 'px';
+    posX = hx; posY = hy; face(false);
+    panel.classList.add('open');
+    if (!panelInited) {
+      panelInited = true;
+      addMsg('laika', rand(M.panelGreet));
+      addSuggests();
+    }
+    setTimeout(() => inputEl.focus(), 300);
+    react('bounce', 600);
+  }
+
+  function closePanel() {
+    chatOpen = false;
+    panel.classList.remove('open');
+    scheduleWander(); resetSleep();
+  }
+
+  function addMsg(role, text) {
+    const wrap2 = document.createElement('div');
+    wrap2.className = `lk-msg lk-msg-${role}`;
+    const lbl = document.createElement('div');
+    lbl.className = 'lk-msg-label';
+    lbl.textContent = role === 'user' ? (LANG === 'kz' ? 'Сіз' : 'You') : 'Laika 🐾';
+    const bbl = document.createElement('div');
+    bbl.className = 'lk-msg-bubble';
+    bbl.textContent = text;
+    wrap2.appendChild(lbl); wrap2.appendChild(bbl);
+    msgsEl.appendChild(wrap2);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  function addTyping() {
+    const div = document.createElement('div');
+    div.className = 'lk-msg lk-msg-laika lk-typing'; div.id = 'lkTyping';
+    const lbl = document.createElement('div'); lbl.className = 'lk-msg-label'; lbl.textContent = 'Laika 🐾';
+    const bbl = document.createElement('div'); bbl.className = 'lk-msg-bubble';
+    bbl.innerHTML = '<div class="lk-dot"></div><div class="lk-dot"></div><div class="lk-dot"></div>';
+    div.appendChild(lbl); div.appendChild(bbl);
+    msgsEl.appendChild(div); msgsEl.scrollTop = msgsEl.scrollHeight;
+    return div;
+  }
+
+  function addSuggests() {
+    const row = document.createElement('div'); row.className = 'lk-suggests'; row.id = 'lkSuggests';
+    M.suggests.forEach(s => {
+      const btn = document.createElement('button'); btn.className = 'lk-suggest'; btn.textContent = s;
+      btn.onclick = () => { inputEl.value = s; sendMsg(); };
+      row.appendChild(btn);
+    });
+    msgsEl.after(row);
+  }
+
+  async function sendMsg() {
+    const text = inputEl.value.trim(); if (!text) return;
+    inputEl.value = ''; sendEl.disabled = true;
+    const sug = document.getElementById('lkSuggests'); if (sug) sug.remove();
+    addMsg('user', text); react('tilt', 600);
+    const typing = addTyping();
+    say(rand(M.thinking), 8000);
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ message: text, lang: LANG, laika: true })
+      });
+      const d = await r.json(); typing.remove();
+      addMsg('laika', d.response || 'Woof... something went wrong 🐾');
+      react('bounce', 700); bubble.classList.remove('show');
+    } catch(e) {
+      typing.remove(); addMsg('laika', 'Woof! Connection issue, try again! 🐾');
+    }
+    sendEl.disabled = false; inputEl.focus(); msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  document.getElementById('laikaPanelClose').onclick = closePanel;
+  sendEl.onclick = sendMsg;
+  inputEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
+
+  // ── Drag ─────────────────────────────────────────────────
+  let dragOX = 0, dragOY = 0, mouseDownT = 0, didDrag = false;
+
+  wrap.addEventListener('mousedown', e => {
+    mouseDownT = Date.now(); didDrag = false;
+    dragOX = e.clientX - posX; dragOY = e.clientY - posY;
+    wrap.style.transition = 'none'; clearTimeout(wanderTimer); e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!mouseDownT) return; didDrag = true; dragging = true;
+    dog.classList.remove('lk-walking'); face(e.clientX - posX > 0);
+    posX = Math.max(0, Math.min(window.innerWidth  - 85,  e.clientX - dragOX));
+    posY = Math.max(0, Math.min(window.innerHeight - 170, e.clientY - dragOY));
+    wrap.style.left = posX + 'px'; wrap.style.top = posY + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (mouseDownT && !didDrag) {
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { clickTimer = null; handleSingleClick(); }, 220);
+    }
+    if (dragging) { dragging = false; if (!chatOpen) scheduleWander(); }
+    mouseDownT = 0;
+  });
+  wrap.addEventListener('dblclick', e => {
+    e.preventDefault(); clearTimeout(clickTimer); clickTimer = null;
+    spawnHearts(); say(rand(M.pet), 2500); react('bounce', 900);
+  });
+  wrap.addEventListener('touchstart', e => {
+    mouseDownT = Date.now(); didDrag = false;
+    const t = e.touches[0]; dragOX = t.clientX - posX; dragOY = t.clientY - posY;
+    wrap.style.transition = 'none'; clearTimeout(wanderTimer);
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!mouseDownT) return; didDrag = true; dragging = true;
+    const t = e.touches[0];
+    posX = Math.max(0, Math.min(window.innerWidth  - 85,  t.clientX - dragOX));
+    posY = Math.max(0, Math.min(window.innerHeight - 170, t.clientY - dragOY));
+    wrap.style.left = posX + 'px'; wrap.style.top = posY + 'px';
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (mouseDownT && !didDrag) handleSingleClick();
+    if (dragging) { dragging = false; if (!chatOpen) scheduleWander(); }
+    mouseDownT = 0;
+  });
+
+  function handleSingleClick() {
+    if (sleeping) { sleeping = false; dog.classList.remove('lk-sleeping'); say(rand(M.wake), 2500); react('bounce', 900); scheduleWander(); resetSleep(); return; }
+    if (chatOpen) closePanel(); else openPanel();
+  }
+
+  // ── Fetch intercept ───────────────────────────────────────
+  const _fetch = window.fetch;
+  window.fetch = function(...args) {
+    const url = typeof args[0] === 'string' ? args[0] : '';
+    const p = _fetch.apply(this, args);
+    if (url.includes('/api/scan')) {
+      p.then(r => r.clone().json().then(d => {
+        const hz = (d.planets||[]).some(pl => pl.in_hz);
+        if (hz)                        { react('excited', 1700); say(rand(M.hz), 4500); }
+        else if ((d.planets||[]).length) { react('bounce', 900);  say(rand(M.scan), 3000); }
+      }).catch(()=>{}));
+    } else if (url.includes('achievement')) {
+      react('spin', 1000); say(rand(M.achieve), 4000);
+    }
+    return p;
+  };
+
+  // ── Init ─────────────────────────────────────────────────
+  setTimeout(() => { say(rand(M.greet), 4200); scheduleWander(); }, 1400);
+  scheduleThought(); resetSleep();
+})();
+</script>
+
+<!-- Main JS -->
+<script src="{{ url_for('static', filename='js/atlas.js') }}?v={{ static_ver }}"></script>
+<script>
+window.ATLAS = window.ATLAS || {};
+window.ATLAS.lang = "{{ lang }}";
+window.ATLAS.path = "{{ request.path }}";
+
+// ── Navbar scroll glass effect ──────────────────────────
+(function() {
+  const nav = document.getElementById('mainNav');
+  function onScroll() {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+
+// ── UTC clock ────────────────────────────────────────────
+(function() {
+  const el = document.getElementById('navTime');
+  if (!el) return;
+  function tick() {
+    const d = new Date();
+    const h = String(d.getUTCHours()).padStart(2,'0');
+    const m = String(d.getUTCMinutes()).padStart(2,'0');
+    const s = String(d.getUTCSeconds()).padStart(2,'0');
+    el.textContent = h + ':' + m + ':' + s + ' UTC';
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+
+// ── CMD+K Search ─────────────────────────────────────────
+const SEARCH_INDEX = [
+  { title: 'Explore Systems', sub: 'Scan star systems and planets', icon: '🔭', url: '/explore', tag: 'Page' },
+  { title: 'Mission Analysis', sub: 'Habitability intelligence report', icon: '📊', url: '/analysis', tag: 'Page' },
+  { title: 'Reference Guide', sub: 'Scientific concepts and formulas', icon: '📚', url: '/encyclopedia', tag: 'Page' },
+  { title: 'Research Profile', sub: 'Your achievements and progress', icon: '🏆', url: '/about', tag: 'Page' },
+  { title: 'ESI — Earth Similarity Index', sub: 'Similarity to Earth (0–1 scale)', icon: '🌍', url: '/encyclopedia', tag: 'Concept' },
+  { title: 'Habitable Zone', sub: 'Region where liquid water can exist', icon: '💧', url: '/encyclopedia', tag: 'Concept' },
+  { title: 'Transit Method', sub: 'Planet detection via stellar dimming', icon: '⭐', url: '/encyclopedia', tag: 'Concept' },
+  { title: 'Radial Velocity', sub: 'Doppler wobble detection method', icon: '〰️', url: '/encyclopedia', tag: 'Concept' },
+  { title: 'AI Chat', sub: 'Ask ATLAS AI about exoplanets', icon: '🤖', url: '/explore?tab=chat', tag: 'Feature' },
+  { title: 'Star Map', sub: '3D stellar neighborhood map', icon: '🗺️', url: '/explore?tab=map', tag: 'Feature' },
+  { title: 'Travel Simulator', sub: 'Relativistic travel time calculator', icon: '🚀', url: '/explore?tab=travel', tag: 'Feature' },
+  { title: 'Compare Planets', sub: 'Side-by-side planet comparison', icon: '📏', url: '/explore?tab=compare', tag: 'Feature' },
+];
+
+let searchActive = -1;
+
+function openSearch() {
+  document.getElementById('searchOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('searchInput').focus(), 50);
+}
+function closeSearch(e) {
+  if (!e || e.target === document.getElementById('searchOverlay')) {
+    document.getElementById('searchOverlay').classList.remove('open');
+    document.getElementById('searchInput').value = '';
+    searchActive = -1;
+    renderSearchResults([]);
+  }
+}
+function runSearch(q) {
+  if (!q.trim()) { renderSearchResults([]); return; }
+  const ql = q.toLowerCase();
+  const res = SEARCH_INDEX.filter(x =>
+    x.title.toLowerCase().includes(ql) || x.sub.toLowerCase().includes(ql) || x.tag.toLowerCase().includes(ql)
+  );
+  renderSearchResults(res);
+}
+function renderSearchResults(items) {
+  const el = document.getElementById('searchResults');
+  if (!items.length) {
+    const q = document.getElementById('searchInput').value.trim();
+    el.innerHTML = q
+      ? '<div class="search-empty">No results for "' + q + '"</div>'
+      : '<div class="search-empty">Type to search across all systems and topics</div>';
+    return;
+  }
+  el.innerHTML = items.map((item, i) => `
+    <div class="search-result-item${i === searchActive ? ' active' : ''}"
+         onclick="gotoSearch('${item.url}')" data-idx="${i}">
+      <span class="search-result-icon">${item.icon}</span>
+      <div>
+        <div class="search-result-title">${item.title}</div>
+        <div class="search-result-sub">${item.sub}</div>
+      </div>
+      <span class="search-result-tag">${item.tag}</span>
+    </div>
+  `).join('');
+}
+function gotoSearch(url) {
+  closeSearch();
+  window.location.href = url + (url.includes('?') ? '&' : '?') + 'lang=' + window.ATLAS.lang;
+}
+function searchNav(e) {
+  const items = document.querySelectorAll('.search-result-item');
+  if (e.key === 'Escape') { closeSearch(); return; }
+  if (e.key === 'ArrowDown') { searchActive = Math.min(searchActive + 1, items.length - 1); }
+  if (e.key === 'ArrowUp')   { searchActive = Math.max(searchActive - 1, 0); }
+  if (e.key === 'Enter' && items[searchActive]) { items[searchActive].click(); return; }
+  items.forEach((el, i) => el.classList.toggle('active', i === searchActive));
+}
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+  if (e.key === 'Escape') closeSearch();
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
