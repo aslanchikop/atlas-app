@@ -38,7 +38,8 @@
     </div>
   </div>
 
-  <!-- Tab Navigation -->
+  <!-- Tab Navigation — hidden on news/nasaeyes pages -->
+  {% if tab not in ['news', 'nasaeyes'] %}
   <div class="tab-nav reveal">
     <button class="tab-btn {% if tab=='missions' %}active{% endif %}" data-tab="missions">{% if lang == 'en' %}Missions{% else %}Миссиялар{% endif %}</button>
     <button class="tab-btn {% if tab=='system' %}active{% endif %}"   data-tab="system">{% if lang == 'en' %}System View{% else %}Жүйе Көрінісі{% endif %}</button>
@@ -47,6 +48,7 @@
     <button class="tab-btn {% if tab=='history' %}active{% endif %}"  data-tab="history">{% if lang == 'en' %}History{% else %}Тарих{% endif %}</button>
     <button class="tab-btn {% if tab=='chat' %}active{% endif %}"     data-tab="chat">{% if lang == 'en' %}AI Chat{% else %}ЖИ Чат{% endif %}</button>
   </div>
+  {% endif %}
 
   <!-- ═══════════════════════════════════════════════════
        TAB: MISSIONS
@@ -308,6 +310,9 @@
        TAB: SYSTEM VIEW
        ═══════════════════════════════════════════════════ -->
   <div class="tab-content {% if tab=='system' %}active{% endif %}" id="tab-system">
+  <!-- Discovered systems picker — dynamically populated after scans -->
+  <div id="systemPicker" style="display:none;margin-bottom:12px"></div>
+  <div id="systemViewContent">
     {% if current_planets %}
     <!-- Star info metrics -->
     <div class="metrics-row reveal">
@@ -478,7 +483,8 @@
       <button class="btn btn-primary" onclick="switchTab('missions')">{% if lang == 'en' %}Go to Missions{% else %}Миссияларға өту{% endif %}</button>
     </div>
     {% endif %}
-  </div>
+  </div><!-- /systemViewContent -->
+  </div><!-- /tab-system -->
 
   <!-- ═══════════════════════════════════════════════════
        TAB: STAR MAP
@@ -573,14 +579,14 @@
         <div class="ms-available" id="msAvailable">
           <div class="text-xs text-muted mb-8 uppercase" style="letter-spacing:1px">{% if lang == 'en' %}Reference Planets{% else %}Анықтамалық планеталар{% endif %}</div>
           {% for name, data in known_planets.items() %}
-          <div class="ms-option" data-name="{{ name }}" onclick="toggleCompare('{{ name }}', {{ data|tojson }})">
+          <div class="ms-option" data-name="{{ name }}" onclick="toggleCompare(this.dataset.name, KNOWN_PLANETS[this.dataset.name]||{})">
             <span>{{ name }}</span>
           </div>
           {% endfor %}
           {% if custom_planets %}
           <div class="text-xs text-muted mt-12 mb-8 uppercase" style="letter-spacing:1px">{% if lang == 'en' %}Discovered Planets{% else %}Табылған планеталар{% endif %}</div>
           {% for name, data in custom_planets.items() %}
-          <div class="ms-option" data-name="{{ name }}" onclick="toggleCompare('{{ name }}', {{ data|tojson }})">
+          <div class="ms-option" data-name="{{ name }}" onclick="toggleCompare(this.dataset.name, customPlanets[this.dataset.name]||{})">
             <span>{{ name }}</span>
           </div>
           {% endfor %}
@@ -1156,7 +1162,7 @@ function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tabName));
   currentTab = tabName;
-  if (tabName === 'system') loadSystemChart();
+  if (tabName === 'system' && !window._dynPlanets) loadSystemChart();
   if (tabName === 'map')    loadStarmap();
   if (tabName === 'compare') renderCompareCharts();
 }
@@ -1346,9 +1352,9 @@ async function scanStar(starName) {
   await sleep(800);
   hideTerminal();
   if (!_autoScanMode) {
-    switchTab('system');
     if (window._atlasSave) await window._atlasSave();
-    setTimeout(() => location.reload(), 1200);
+    renderSystemViewFromData(data.star, data.planets, data.hostname);
+    switchTab('system');
   } else {
     _autoDone++;
     _autoFound += pl.length;
@@ -1443,7 +1449,7 @@ async function runNextAutoScan() {
       _kz ? `Миссия аяқталды! ${_autoDone} жүйе сканерленді 🎉` : `Mission complete! ${_autoDone} systems scanned 🎉`,
       'success'
     );
-    setTimeout(() => location.reload(), 1800);
+    if (window._atlasSave) await window._atlasSave();
     _missionStop(); return;
   }
 
@@ -1456,13 +1462,13 @@ async function runNextAutoScan() {
 
 // ── Select planet ─────────────────────────────────────────
 async function selectPlanet(idx) {
+  if (window._dynPlanets) { selectPlanetDyn(idx); return; }
   const resp = await fetch('/api/select-planet', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({index: idx})
   });
   document.querySelectorAll('.planet-card').forEach((c,i) => c.classList.toggle('selected', i === idx));
   loadSystemChart(idx);
-  // AI отчёт по выбранной планете
   try {
     const d = await resp.json();
     if (d && d.planet) fetchAIPlanetReport(d.planet);
@@ -1478,8 +1484,181 @@ async function loadSystem(hostname) {
   const data = await res.json();
   if (data.success) {
     showToast('success', 'System Loaded', hostname);
-    setTimeout(() => location.reload(), 500);
+    renderSystemViewFromData(data.star, data.planets, hostname);
+    switchTab('system');
   }
+}
+
+// ── Dynamic System View Renderer ──────────────────────────
+function _scClass(s) { return s >= 70 ? 'score-high' : s >= 50 ? 'score-medium' : s >= 30 ? 'score-low' : 'score-none'; }
+function _scColor(s) { return s >= 70 ? '#7cb97c' : s >= 50 ? '#00d4ff' : s >= 30 ? '#d4a574' : '#f87171'; }
+function _bi(field)  { return typeof field === 'object' ? (field[_kz ? 'kz' : 'en'] || field.en || '') : (field || ''); }
+
+function renderSystemViewFromData(star, planets, hostname) {
+  const wrap = document.getElementById('systemViewContent');
+  if (!wrap || !planets || !planets.length) return;
+
+  window._dynPlanets  = planets;
+  window._dynStar     = star;
+  window._dynHostname = hostname;
+
+  // Systems picker
+  const sysKeys = Object.keys(SYSTEMS);
+  const pickerEl = document.getElementById('systemPicker');
+  if (pickerEl && sysKeys.length > 0) {
+    pickerEl.style.display = 'flex';
+    pickerEl.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px 16px;background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.07)';
+    pickerEl.innerHTML =
+      `<span style="font-size:0.68rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-faint);white-space:nowrap">📡 Systems:</span>` +
+      sysKeys.map(h =>
+        `<button class="btn btn-sm ${h===hostname?'btn-primary':'btn-ghost'}" onclick="loadSystem(this.dataset.h)" data-h="${h.replace(/"/g,'&quot;')}"
+          style="font-size:0.73rem;padding:3px 10px">${h}</button>`
+      ).join('');
+  }
+
+  const sel = planets[0];
+  const dist = star.distance ? (+star.distance).toFixed(1) : '?';
+
+  wrap.innerHTML = `
+    <div class="metrics-row" style="margin-bottom:16px">
+      <div class="glass metric-card"><div class="m-value">${Math.round(star.teff||5778)} K</div><div class="m-label">⭐ Temperature</div></div>
+      <div class="glass metric-card"><div class="m-value">${(+star.radius||1).toFixed(2)} R☉</div><div class="m-label">📏 Radius</div></div>
+      <div class="glass metric-card"><div class="m-value">${(+star.mass||1).toFixed(2)} M☉</div><div class="m-label">⚖️ Mass</div></div>
+      <div class="glass metric-card"><div class="m-value">${dist} ly</div><div class="m-label">📍 Distance</div></div>
+    </div>
+    <div class="glass p-16 reveal mb-16" style="margin-bottom:16px">
+      <div class="section-title">${hostname} — 3D Orbital Map</div>
+      <div class="chart-wrap" id="systemChartWrap">
+        <div class="chart-loading" id="systemChartLoading" style="display:flex"><div class="spinner"></div><span>Loading visualization…</span></div>
+        <div id="systemChart"></div>
+      </div>
+    </div>
+    <div class="glass p-20 reveal mb-16" style="margin-bottom:16px">
+      <div class="section-title">Planets (${planets.length})</div>
+      <div class="planets-grid" id="planetCardsGrid">
+        ${planets.map((p,i) => `
+          <div class="glass planet-card${i===0?' selected':''}" onclick="selectPlanetDyn(${i})" data-planet-idx="${i}">
+            ${p.in_hz ? '<div class="p-hz-badge"></div>' : ''}
+            <div class="p-emoji">${p.emoji}</div>
+            <div class="p-name">${p.name.split(' ').pop()}</div>
+            <div class="p-score ${_scClass(p.hab_score)}">${p.hab_score}</div>
+            <div class="p-score-label">/100</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div id="planetDetail">${buildPlanetDetailHtml(sel, 0)}</div>`;
+
+  loadSystemChart(0);
+  // Trigger AI report for first planet
+  fetch('/api/select-planet', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:0})})
+    .then(r=>r.json()).then(d=>{if(d.planet) setTimeout(()=>fetchAIPlanetReport(d.planet),400);}).catch(()=>{});
+}
+
+function buildPlanetDetailHtml(p, idx) {
+  const sc = p.hab_score;
+  const hazHtml = (p.hazards||[]).map(h =>
+    `<div class="hazard-item ${h.level}">
+       <div class="hazard-name">${_bi(h.name)}</div>
+       <div class="hazard-desc">${_bi(h.desc)}</div>
+     </div>`).join('');
+
+  const lp = p.life_potential || {};
+  const lpHtml = lp.type ? (() => {
+    const lpColor = lp.color || 'info';
+    const lpBg    = lpColor==='success'?'var(--green)':lpColor==='warning'?'var(--yellow)':lpColor==='info'?'var(--blue)':'var(--red)';
+    const fHtml   = (lp.factors||[]).map(f =>
+      `<div class="life-factor">
+         <span class="lf-dot" style="background:${f.ok===true?'var(--green)':f.ok===false?'var(--red)':'var(--yellow)'}"></span>
+         <span>${_bi(f.text)}</span>
+       </div>`).join('');
+    return `<div class="glass p-20">
+      <div class="section-title">Life Potential</div>
+      <div class="badge badge-${lpColor} mb-12">${_bi(lp.type)}</div>
+      <div class="life-bar mb-12"><div class="life-fill" style="width:${lp.score||0}%;background:${lpBg}"></div></div>
+      ${fHtml}
+    </div>`;
+  })() : '';
+
+  const pname = (window._dynHostname||'');
+  return `
+    <div class="detail-grid">
+      <div class="glass p-24">
+        <div class="d-flex align-center gap-12 mb-16">
+          <span style="font-size:2.5rem">${p.emoji}</span>
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.3rem;font-weight:700">${p.name}</div>
+            <div class="text-muted text-sm">${p.type}</div>
+            <div class="text-faint text-xs" style="margin-top:2px">${_bi(p.type_desc)}</div>
+          </div>
+        </div>
+        <div class="detail-props">
+          <div class="glass prop-item"><div class="prop-value">${p.radius}</div><div class="prop-label">Radius R⊕</div></div>
+          <div class="glass prop-item"><div class="prop-value">${p.mass}</div><div class="prop-label">Mass M⊕</div></div>
+          <div class="glass prop-item"><div class="prop-value">${Math.round(p.temp)}K</div><div class="prop-label">Temperature</div></div>
+          <div class="glass prop-item"><div class="prop-value">${p.gravity}</div><div class="prop-label">Gravity g</div></div>
+          <div class="glass prop-item"><div class="prop-value">${p.esi}</div><div class="prop-label">ESI</div></div>
+          <div class="glass prop-item"><div class="prop-value">${p.period}d</div><div class="prop-label">Orbit Period</div></div>
+          <div class="glass prop-item"><div class="prop-value">${p.orbit} AU</div><div class="prop-label">Orbit Dist.</div></div>
+          <div class="glass prop-item"><div class="prop-value">${p.escape_vel} km/s</div><div class="prop-label">Escape Vel.</div></div>
+          <div class="glass prop-item"><div class="prop-value">${p.moons}</div><div class="prop-label">Est. Moons</div></div>
+        </div>
+        <div class="glass score-ring-wrap">
+          <div>
+            <div class="score-ring-num" style="color:${_scColor(sc)}">${sc}</div>
+            <div class="score-ring-label">Habitability Score</div>
+            <div class="score-ring-sub">
+              ${p.in_hz ? '<span class="badge badge-success">✅ In Habitable Zone</span>' : '<span class="badge badge-danger">❌ Outside HZ</span>'}
+            </div>
+            ${p.ml_score != null ? `<div class="text-xs text-muted mt-8">ML Model: ${Math.round(p.ml_score)}/100</div>` : ''}
+          </div>
+          <div style="flex:1">
+            <div class="life-bar" style="height:10px"><div class="life-fill" style="width:${sc}%;background:${_scColor(sc)}"></div></div>
+            ${p.disc_year  ? `<div class="text-xs text-muted mt-8">Discovered: ${p.disc_year}</div>` : ''}
+            ${p.disc_method? `<div class="text-xs text-muted">Method: ${p.disc_method}</div>` : ''}
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-full mt-16"
+          onclick="addToCompare(window._dynPlanets[${idx}].name, window._dynPlanets[${idx}])">
+          + Add to Compare
+        </button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="glass p-20">
+          <div class="section-title">Atmosphere</div>
+          <div class="text-sm" style="color:var(--text-muted);line-height:1.6">${_bi(p.atmo_type)}</div>
+        </div>
+        <div class="glass p-20">
+          <div class="section-title">Hazard Assessment</div>
+          ${hazHtml}
+        </div>
+        ${lpHtml}
+        <div class="glass p-20">
+          <div class="section-title">Magnetic Field</div>
+          <div class="text-sm text-muted">${_bi(p.mag_desc)}</div>
+          ${p.mag_str ? `<div class="text-display text-xl text-accent mt-8">${p.mag_str}× Earth</div>` : ''}
+        </div>
+        <div class="glass p-20" id="aiPlanetBox">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="section-title" style="margin-bottom:0">🤖 AI Planet Report</div>
+            <span style="font-size:0.62rem;color:var(--text-faint);letter-spacing:1px">Gemini</span>
+          </div>
+          <div id="aiPlanetText" class="text-sm" style="color:var(--text-muted);line-height:1.75;min-height:48px">
+            <span style="color:var(--text-faint);font-style:italic">Generating AI analysis…</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function selectPlanetDyn(idx) {
+  const planets = window._dynPlanets;
+  if (!planets || !planets[idx]) return;
+  document.querySelectorAll('.planet-card').forEach((c,i) => c.classList.toggle('selected', i===idx));
+  const detail = document.getElementById('planetDetail');
+  if (detail) detail.innerHTML = buildPlanetDetailHtml(planets[idx], idx);
+  loadSystemChart(idx);
+  fetch('/api/select-planet', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:idx})})
+    .then(r=>r.json()).then(d=>{if(d.planet) fetchAIPlanetReport(d.planet);}).catch(()=>{});
 }
 
 // ── Delete system ─────────────────────────────────────────

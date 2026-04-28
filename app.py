@@ -15,7 +15,8 @@ GEMINI_API_KEY = 'AIzaSyCW_yNIspPEXNWkieqG2QQnqWkai5nP1Q8'
 GEMINI_MODELS = [
     'gemini-2.0-flash',
     'gemini-2.0-flash-lite',
-    'gemini-2.5-flash-lite',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
 GEMINI_URL = GEMINI_BASE + GEMINI_MODELS[0] + ':generateContent?key=' + GEMINI_API_KEY
@@ -790,6 +791,7 @@ def process_planet_data(planet_raw, star_data):
     moons      = estimate_moons(mass, orbit, stellar_mass)
     hab_score  = calculate_habitability_score(temp, radius, mass, in_hz, esi, gravity,
                                                stellar_teff, atmo_type, hazards)
+    lp_type, lp_score, lp_factors, lp_color = predict_life_potential(temp, radius, in_hz, esi, atmo_type)
 
     # ML-enhanced score if model available
     ml_score = None
@@ -841,6 +843,7 @@ def process_planet_data(planet_raw, star_data):
         'moons':      moons,
         'hab_score':  hab_score,
         'ml_score':   ml_score,
+        'life_potential': {'type': lp_type, 'score': lp_score, 'factors': lp_factors, 'color': lp_color},
         'emoji':      emoji,
         'distance':   star_data.get('distance', 0),
         'disc_year':  planet_raw.get('disc_year'),
@@ -1420,8 +1423,51 @@ def get_chat_response(message, lang='en', history=None, laika=False):
         if result:
             return result, 'gemini'
 
-    # 3) Fallback
-    return ("I'm ATLAS AI. Ask me about exoplanets, habitability, star types, or space missions!"), 'fallback'
+    # 3) Topic-aware fallback (no AI available)
+    fb = _topic_fallback(msg_lower, lang, laika)
+    return fb, 'fallback'
+
+
+_FALLBACKS = {
+    ('habitable', 'habitability', 'life', 'тіршілік', 'жарамды'): {
+        'en': "A habitable planet needs liquid water, temperatures between ~200–350 K, and a rocky surface with gravity similar to Earth. The ESI (Earth Similarity Index) score here rates planets from 0–1 based on radius, temperature, and density. Higher scores mean Earth-like conditions are more likely.",
+        'kz': "Тіршілікке жарамды планетада сұйық су, шамамен 200–350 К температура және Жерге ұқсас ауырлық күші болуы керек. ESI (Жер ұқсастық индексі) ұпайы планетаның Жерге ұқсастығын 0–1 шкаласымен бағалайды.",
+    },
+    ('esi', 'earth similarity', 'жер ұқсастық'): {
+        'en': "ESI (Earth Similarity Index) measures how Earth-like a planet is, on a scale of 0 to 1. It's calculated from radius, density, escape velocity, and surface temperature. Earth scores 1.0; Mars scores 0.64; most exoplanets score below 0.5.",
+        'kz': "ESI (Жер ұқсастық индексі) планетаның Жерге қаншалықты ұқсас екенін 0-ден 1-ге дейін өлшейді. Ол радиус, тығыздық, шығу жылдамдығы және беттік температурадан есептеледі.",
+    },
+    ('trappist', 'kepler', 'proxima', 'tess', 'k2', 'gj', 'lhs', 'toi'): {
+        'en': "TRAPPIST-1 hosts 7 Earth-sized planets with 3 in the habitable zone (40 ly away). Kepler-442b has ESI 0.84 — one of the most Earth-like. Proxima Centauri b is the nearest exoplanet at 4.24 ly. Use the Explore tab to scan any of these systems!",
+        'kz': "TRAPPIST-1 жүйесінде 7 Жер мөлшеріндегі планета бар, 3-і тіршілік аймағында (40 жарық жыл). Kepler-442b ESI 0.84 — ең Жерге ұқсасының бірі. Proxima Centauri b — ең жақын экзопланета, 4.24 жарық жыл.",
+    },
+    ('habitable zone', 'hz', 'goldilocks', 'тіршілік аймақ'): {
+        'en': "The habitable zone (HZ) is the orbital range around a star where liquid water can exist on a planet's surface — sometimes called the 'Goldilocks zone'. Its boundaries depend on the star's temperature and luminosity. ATLAS marks HZ planets with a green badge.",
+        'kz': "Тіршілік аймағы — жұлдыз айналасындағы сұйық су планета бетінде болуы мүмкін орбиталық аралық. Оның шекаралары жұлдыздың температурасы мен жарықтылығына байланысты.",
+    },
+    ('scan', 'сканер', 'mission', 'миссия', 'discover', 'табу'): {
+        'en': "To scan a star system: go to the Explore tab → Missions panel → pick a catalog (Nearby Stars, Kepler, TESS…) → click 'Scan System'. ATLAS will autonomously query NASA's Exoplanet Archive and analyze all planets in that system.",
+        'kz': "Жұлдыз жүйесін сканерлеу үшін: Зерттеу қосымшасы → Миссиялар → каталог таңдаңыз → 'Жүйені сканерлеу' батырмасын басыңыз. ATLAS NASA мұрағатынан деректерді алып, барлық планеталарды талдайды.",
+    },
+    ('compare', 'салыстыр'): {
+        'en': "Use the Compare tab to compare up to 6 planets side-by-side. Select reference planets (Earth, Mars, Venus) and any discovered planets. ATLAS generates radar and bar charts comparing radius, mass, temperature, ESI, gravity, and habitability score.",
+        'kz': "Салыстыру қосымшасын 6 планетаны қатар салыстыру үшін пайдаланыңыз. Анықтамалық планеталарды (Жер, Марс, Шолпан) және табылған планеталарды таңдаңыз.",
+    },
+    ('atmosphere', 'атмосфер'): {
+        'en': "ATLAS predicts atmosphere type from a planet's radius, mass, temperature, and stellar environment. A thick N₂/O₂ atmosphere like Earth's is ideal. Hot or very massive planets may have H₂/He envelopes; cold small ones may have no atmosphere at all.",
+        'kz': "ATLAS планетаның радиусы, массасы, температурасы және жұлдыздық ортасынан атмосфера түрін болжайды. Жердегідей қалың N₂/O₂ атмосферасы ең қолайлы.",
+    },
+}
+
+def _topic_fallback(msg_lower, lang, laika):
+    if laika:
+        return "Woof! 🐾 I'm having trouble connecting to my space antenna right now. Try asking me again in a moment — I know lots about exoplanets, TRAPPIST-1, and the cosmos!"
+    for keywords, responses in _FALLBACKS.items():
+        if any(kw in msg_lower for kw in keywords):
+            return responses.get(lang, responses['en'])
+    if lang == 'kz':
+        return "ATLAS ЖИ қазіргі уақытта қол жетімді емес. Экзопланеталар, тіршілікке жарамдылық, ESI немесе миссиялар туралы сұрақ қойыңыз!"
+    return "ATLAS AI is temporarily unavailable. Ask me about exoplanets, habitability scores, the ESI index, star systems, or how to use the Explore tab!"
 
 # ── Page routes ───────────────────────────────────────────────────────────────
 
