@@ -784,13 +784,13 @@
         <span style="font-size:1.8rem">🤖</span>
         <div>
           <div style="font-family:var(--font-display);font-size:1rem;font-weight:600">ATLAS AI</div>
-          <div class="text-xs text-green">● Online — Exoplanet Research Assistant</div>
+          <div class="text-xs text-green">● {% if lang == 'en' %}Online — Exoplanet Research Assistant{% else %}Желіде — Экзопланета Зерттеу Көмекшісі{% endif %}</div>
         </div>
       </div>
 
       <!-- Command hints -->
       <div style="padding:8px 16px 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-        <span style="font-size:0.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-faint);margin-right:4px">Commands:</span>
+        <span style="font-size:0.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-faint);margin-right:4px">{% if lang == 'en' %}Commands:{% else %}Командалар:{% endif %}</span>
         <span class="quick-q" onclick="sendQuickQ(this)" style="background:rgba(212,165,116,0.08);border-color:rgba(212,165,116,0.2)">scan TRAPPIST-1</span>
         <span class="quick-q" onclick="sendQuickQ(this)" style="background:rgba(212,165,116,0.08);border-color:rgba(212,165,116,0.2)">scan Kepler-442</span>
         <span class="quick-q" onclick="sendQuickQ(this)" style="background:rgba(212,165,116,0.08);border-color:rgba(212,165,116,0.2)">show analysis</span>
@@ -799,18 +799,23 @@
       </div>
 
       <div class="quick-questions" id="quickQuestions">
-        <span class="quick-q" onclick="sendQuickQ(this)">What makes a planet habitable?</span>
-        <span class="quick-q" onclick="sendQuickQ(this)">Tell me about TRAPPIST-1</span>
-        <span class="quick-q" onclick="sendQuickQ(this)">How is ESI calculated?</span>
-        <span class="quick-q" onclick="sendQuickQ(this)">What is the habitable zone?</span>
-        <span class="quick-q" onclick="sendQuickQ(this)">How do we detect exoplanets?</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">{% if lang == 'en' %}What makes a planet habitable?{% else %}Планета тіршілікке қалай жарамды болады?{% endif %}</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">{% if lang == 'en' %}Tell me about TRAPPIST-1{% else %}TRAPPIST-1 туралы айт{% endif %}</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">{% if lang == 'en' %}How is ESI calculated?{% else %}ESI қалай есептеледі?{% endif %}</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">{% if lang == 'en' %}What is the habitable zone?{% else %}Тіршілік аймағы дегеніміз не?{% endif %}</span>
+        <span class="quick-q" onclick="sendQuickQ(this)">{% if lang == 'en' %}How do we detect exoplanets?{% else %}Экзопланеталарды қалай анықтаймыз?{% endif %}</span>
       </div>
 
       <div class="chat-messages" id="chatMessages">
         <div class="chat-msg bot">
           <div class="msg-bubble">
+            {% if lang == 'en' %}
             👋 I'm ATLAS AI — your exoplanet research assistant.<br>
             Ask me questions <em>or</em> give me commands: <b>scan TRAPPIST-1</b>, <b>show analysis</b>, <b>open star map</b>, <b>list my systems</b>.
+            {% else %}
+            👋 Мен ATLAS ЖИ — сіздің экзопланета зерттеу көмекшіңіз.<br>
+            Сұрақ қойыңыз <em>немесе</em> команда беріңіз: <b>scan TRAPPIST-1</b>, <b>show analysis</b>, <b>open star map</b>, <b>list my systems</b>.
+            {% endif %}
           </div>
         </div>
         {% for msg in chat_history %}
@@ -822,7 +827,7 @@
 
       <div class="chat-input-row">
         <input type="text" class="form-input" id="chatInput"
-               placeholder="Ask a question or type: scan TRAPPIST-1, show analysis, open star map…"
+               placeholder="{% if lang == 'en' %}Ask a question or type: scan TRAPPIST-1, show analysis, open star map…{% else %}Сұрақ қойыңыз немесе команда беріңіз: scan TRAPPIST-1, show analysis…{% endif %}"
                onkeydown="if(event.key==='Enter') sendChat()">
         <button class="btn btn-primary" onclick="sendChat()">{% if lang == 'en' %}Send →{% else %}Жіберу →{% endif %}</button>
       </div>
@@ -842,10 +847,10 @@
           <h2 style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--text)">{% if lang == 'en' %}Exoplanet News{% else %}Экзопланета Жаңалықтары{% endif %}</h2>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center" id="newsFilterBtns">
-          <button class="sort-btn active" onclick="filterNews('all', this)">All</button>
-          <button class="sort-btn" onclick="filterNews('discovery', this)">Discovery</button>
-          <button class="sort-btn" onclick="filterNews('research', this)">Research</button>
-          <button class="sort-btn" onclick="filterNews('mission', this)">Mission</button>
+          <button class="sort-btn active" onclick="filterNews('all', this)">{% if lang == 'en' %}All{% else %}Барлығы{% endif %}</button>
+          <button class="sort-btn" onclick="filterNews('discovery', this)">{% if lang == 'en' %}Discovery{% else %}Ашылым{% endif %}</button>
+          <button class="sort-btn" onclick="filterNews('research', this)">{% if lang == 'en' %}Research{% else %}Зерттеу{% endif %}</button>
+          <button class="sort-btn" onclick="filterNews('mission', this)">{% if lang == 'en' %}Mission{% else %}Миссия{% endif %}</button>
           <button class="sort-btn" onclick="filterNews('jwst', this)">JWST</button>
           <button class="sort-btn" id="newsRefreshBtn" onclick="refreshNews()" style="margin-left:8px;background:rgba(212,165,116,0.1);border-color:rgba(212,165,116,0.3);color:var(--accent)" title="Refresh">
             <span id="newsRefreshIcon">↺</span> {% if lang == 'en' %}Refresh{% else %}Жаңарту{% endif %}
@@ -866,8 +871,12 @@
           <span class="badge badge-info">JWST</span>
           <span class="badge" style="background:rgba(124,185,124,0.15);color:var(--green);border:1px solid rgba(124,185,124,0.3)">Research</span>
         </div>
-        <h3 style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.3">K2-18b: Carbon Dioxide and Methane Confirmed — Possible Hycean World</h3>
-        <p style="font-size:0.84rem;color:var(--text-muted);line-height:1.6;margin-bottom:16px">The James Webb Space Telescope has confirmed the presence of carbon dioxide and methane in the atmosphere of K2-18b, a sub-Neptune exoplanet 124 light-years away in the Leo constellation. Scientists at Cambridge University propose this could indicate a "Hycean world" — a planet with a hydrogen-rich atmosphere and a vast liquid water ocean beneath. The discovery marks the first time potential biosignature-adjacent molecules have been detected on a planet orbiting in the habitable zone of its star.</p>
+        <h3 class="news-title" style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.3"
+          data-en="K2-18b: Carbon Dioxide and Methane Confirmed — Possible Hycean World"
+          data-kz="K2-18b: Көмірқышқыл газы мен метан расталды — Мүмкін Гидрлі Әлем">K2-18b: Carbon Dioxide and Methane Confirmed — Possible Hycean World</h3>
+        <p class="news-body" style="font-size:0.84rem;color:var(--text-muted);line-height:1.6;margin-bottom:16px"
+          data-en="The James Webb Space Telescope has confirmed the presence of carbon dioxide and methane in the atmosphere of K2-18b, a sub-Neptune exoplanet 124 light-years away in the Leo constellation. Scientists at Cambridge University propose this could indicate a &quot;Hycean world&quot; — a planet with a hydrogen-rich atmosphere and a vast liquid water ocean beneath. The discovery marks the first time potential biosignature-adjacent molecules have been detected on a planet orbiting in the habitable zone of its star."
+          data-kz="Джеймс Вебб ғарыштық телескопы Лев шоқжұлдызынан 124 жарық жылдай қашықтықта орналасқан K2-18b суб-Нептун экзопланетасының атмосферасында көмірқышқыл газы мен метанның бар екенін растады. Кембридж университетінің ғалымдары бұл сутегіге бай атмосфера мен астындағы кең сұйық су мұхиты бар «Гидрлі әлем» екенін білдіруі мүмкін деп болжайды. Жаңалық тіршілік аймағында орбита жасайтын планетада биосигнатураға жақын молекулалардың алғаш рет анықталуы болды.">The James Webb Space Telescope has confirmed the presence of carbon dioxide and methane in the atmosphere of K2-18b, a sub-Neptune exoplanet 124 light-years away in the Leo constellation. Scientists at Cambridge University propose this could indicate a "Hycean world" — a planet with a hydrogen-rich atmosphere and a vast liquid water ocean beneath. The discovery marks the first time potential biosignature-adjacent molecules have been detected on a planet orbiting in the habitable zone of its star.</p>
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <span style="font-size:0.72rem;color:var(--text-faint)">September 2023 · Updated 2025</span>
           <span style="font-size:0.72rem;color:var(--text-faint)">·</span>
@@ -883,8 +892,12 @@
           <span class="badge badge-success">Discovery</span>
           <span class="badge" style="background:rgba(0,212,255,0.1);color:var(--blue);border:1px solid rgba(0,212,255,0.25)">TESS</span>
         </div>
-        <h4 style="font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">TOI-700e: Second Earth-Sized Planet Confirmed in Habitable Zone</h4>
-        <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.55;margin-bottom:14px">TESS confirms a second Earth-sized rocky planet in the habitable zone of TOI-700, a cool M-dwarf star 101 light-years away in the Dorado constellation. TOI-700e orbits its star every 28 days and joins sibling TOI-700d as a rare multi-planet habitable-zone system.</p>
+        <h4 class="news-title" style="font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
+          data-en="TOI-700e: Second Earth-Sized Planet Confirmed in Habitable Zone"
+          data-kz="TOI-700e: Тіршілік аймағындағы екінші Жер мөлшеріндегі планета расталды">TOI-700e: Second Earth-Sized Planet Confirmed in Habitable Zone</h4>
+        <p class="news-body" style="font-size:0.78rem;color:var(--text-muted);line-height:1.55;margin-bottom:14px"
+          data-en="TESS confirms a second Earth-sized rocky planet in the habitable zone of TOI-700, a cool M-dwarf star 101 light-years away in the Dorado constellation. TOI-700e orbits its star every 28 days and joins sibling TOI-700d as a rare multi-planet habitable-zone system."
+          data-kz="TESS Дорадо шоқжұлдызынан 101 жарық жылдай қашықтағы TOI-700 суық M-карлик жұлдызының тіршілік аймағындағы екінші Жер мөлшеріндегі тасты планетаны растады. TOI-700e жұлдызын 28 күнде бір орайды және сирек кездесетін көп планеталы тіршілік аймағы жүйесі ретінде TOI-700d-мен бірге орналасқан.">TESS confirms a second Earth-sized rocky planet in the habitable zone of TOI-700, a cool M-dwarf star 101 light-years away in the Dorado constellation. TOI-700e orbits its star every 28 days and joins sibling TOI-700d as a rare multi-planet habitable-zone system.</p>
         <div style="display:flex;align-items:center;justify-content:space-between">
           <span style="font-size:0.70rem;color:var(--text-faint)">Jan 2023 · TESS Mission</span>
           <span style="font-size:0.70rem;padding:3px 8px;background:rgba(124,185,124,0.12);color:var(--green);border-radius:6px;border:1px solid rgba(124,185,124,0.2)">ESI 0.82</span>
@@ -898,16 +911,24 @@
       <div class="glass hoverable news-card" data-category="research discovery" style="padding:20px">
         <div style="font-size:1.8rem;margin-bottom:10px">🪐</div>
         <div style="margin-bottom:10px"><span class="badge badge-info">Research</span></div>
-        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">TRAPPIST-1: Rocky Planets Confirmed Bone-Dry or Water-Rich</h4>
-        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">New JWST thermal emission data shows TRAPPIST-1b and 1c likely have no thick atmosphere, while inner planets may harbor significant water beneath rocky crusts. Observations of the outer planets 1e, 1f, and 1g continue to show promise for habitability.</p>
+        <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
+          data-en="TRAPPIST-1: Rocky Planets Confirmed Bone-Dry or Water-Rich"
+          data-kz="TRAPPIST-1: Тасты планеталар не мүлде құрғақ, не суға бай">TRAPPIST-1: Rocky Planets Confirmed Bone-Dry or Water-Rich</h4>
+        <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
+          data-en="New JWST thermal emission data shows TRAPPIST-1b and 1c likely have no thick atmosphere, while inner planets may harbor significant water beneath rocky crusts. Observations of the outer planets 1e, 1f, and 1g continue to show promise for habitability."
+          data-kz="Жаңа JWST термиялық сәулелену деректері TRAPPIST-1b мен 1c планеталарында қалың атмосфера жоқ екенін көрсетеді, ал ішкі планеталарда тасты қабат астында елеулі су болуы мүмкін. Сыртқы 1e, 1f және 1g планеталарын бақылау тіршілікке жарамдылық жағынан үміт беруде.">New JWST thermal emission data shows TRAPPIST-1b and 1c likely have no thick atmosphere, while inner planets may harbor significant water beneath rocky crusts. Observations of the outer planets 1e, 1f, and 1g continue to show promise for habitability.</p>
         <div style="font-size:0.68rem;color:var(--text-faint)">March 2024 · JWST / Spitzer</div>
       </div>
 
       <div class="glass hoverable news-card" data-category="research" style="padding:20px">
         <div style="font-size:1.8rem;margin-bottom:10px">🌍</div>
         <div style="margin-bottom:10px"><span class="badge badge-accent">Research</span></div>
-        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">Kepler-442b: ML Models Push Habitability Score to 91/100</h4>
-        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">Updated machine learning habitability models incorporating new spectroscopic data place Kepler-442b among the top five most Earth-like worlds known. The planet orbits a K-type star 1,200 ly away with an orbital period of 112.3 days.</p>
+        <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
+          data-en="Kepler-442b: ML Models Push Habitability Score to 91/100"
+          data-kz="Kepler-442b: МО модельдері тіршілікке жарамдылық ұпайын 91/100-ге жеткізді">Kepler-442b: ML Models Push Habitability Score to 91/100</h4>
+        <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
+          data-en="Updated machine learning habitability models incorporating new spectroscopic data place Kepler-442b among the top five most Earth-like worlds known. The planet orbits a K-type star 1,200 ly away with an orbital period of 112.3 days."
+          data-kz="Жаңа спектроскопиялық деректерді қамтыған жаңартылған машиналық оқыту тіршілікке жарамдылық модельдері Kepler-442b-ні белгілі ең Жерге ұқсас бес әлемнің қатарына қойды. Планета 1200 жарық жыл қашықтықтағы K-типті жұлдызды 112,3 күнде бір орайды.">Updated machine learning habitability models incorporating new spectroscopic data place Kepler-442b among the top five most Earth-like worlds known. The planet orbits a K-type star 1,200 ly away with an orbital period of 112.3 days.</p>
         <div style="font-size:0.68rem;color:var(--text-faint)">Nov 2024 · Kepler Archive / AI</div>
       </div>
 
@@ -916,16 +937,24 @@
         <div style="margin-bottom:10px">
           <span class="badge badge-info">JWST</span>
         </div>
-        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">LHS 1140b: Water Vapor Hints at Ocean-Bearing Super-Earth</h4>
-        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">JWST transmission spectroscopy of LHS 1140b, a super-Earth 49 light-years away, reveals a tentative water vapor signal in its atmosphere. If confirmed, this would make LHS 1140b one of the most compelling ocean-world candidates in the nearby stellar neighborhood.</p>
+        <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
+          data-en="LHS 1140b: Water Vapor Hints at Ocean-Bearing Super-Earth"
+          data-kz="LHS 1140b: Су буы мұхиты бар Суперже-Жерге нұсқайды">LHS 1140b: Water Vapor Hints at Ocean-Bearing Super-Earth</h4>
+        <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
+          data-en="JWST transmission spectroscopy of LHS 1140b, a super-Earth 49 light-years away, reveals a tentative water vapor signal in its atmosphere. If confirmed, this would make LHS 1140b one of the most compelling ocean-world candidates in the nearby stellar neighborhood."
+          data-kz="49 жарық жыл қашықтықтағы LHS 1140b суперже-жерінің JWST трансмиссиялық спектроскопиясы оның атмосферасында су буының шартты сигналын ашты. Расталса, LHS 1140b жақын маңдағы ең тартымды мұхит-әлем кандидаттарының бірі болады.">JWST transmission spectroscopy of LHS 1140b, a super-Earth 49 light-years away, reveals a tentative water vapor signal in its atmosphere. If confirmed, this would make LHS 1140b one of the most compelling ocean-world candidates in the nearby stellar neighborhood.</p>
         <div style="font-size:0.68rem;color:var(--text-faint)">July 2024 · JWST / STScI</div>
       </div>
 
       <div class="glass hoverable news-card" data-category="research discovery" style="padding:20px">
         <div style="font-size:1.8rem;margin-bottom:10px">🌑</div>
         <div style="margin-bottom:10px"><span class="badge badge-danger">Research</span></div>
-        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">Proxima Centauri b: Tidal Locking Analysis Revisited</h4>
-        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">New atmospheric circulation models suggest that even a tidally-locked Proxima Centauri b could sustain a stable climate if it possesses a thick enough atmosphere. Temperatures on the day-side terminator could allow liquid water, reviving interest in the nearest exoplanet.</p>
+        <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
+          data-en="Proxima Centauri b: Tidal Locking Analysis Revisited"
+          data-kz="Proxima Centauri b: Толқындық бекіту талдауы қайта қаралды">Proxima Centauri b: Tidal Locking Analysis Revisited</h4>
+        <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
+          data-en="New atmospheric circulation models suggest that even a tidally-locked Proxima Centauri b could sustain a stable climate if it possesses a thick enough atmosphere. Temperatures on the day-side terminator could allow liquid water, reviving interest in the nearest exoplanet."
+          data-kz="Жаңа атмосфералық айналым модельдері толқындық бекітілген Proxima Centauri b да жеткілікті қалың атмосферасы болса тұрақты климатты сақтай алатынын болжайды. Күндізгі жиекте температура сұйық суға мүмкіндік беруі мүмкін, бұл ең жақын экзопланетаға деген қызығушылықты қайта оятты.">New atmospheric circulation models suggest that even a tidally-locked Proxima Centauri b could sustain a stable climate if it possesses a thick enough atmosphere. Temperatures on the day-side terminator could allow liquid water, reviving interest in the nearest exoplanet.</p>
         <div style="font-size:0.68rem;color:var(--text-faint)">Dec 2024 · ESO / Nature</div>
       </div>
     </div>
@@ -935,8 +964,12 @@
 
       <div class="glass hoverable news-card" data-category="mission discovery" style="padding:20px">
         <div style="margin-bottom:10px"><span class="badge badge-success">Discovery</span></div>
-        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">GJ 667Cc: Updated Orbital Parameters Improve HZ Confidence</h4>
-        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">Precision radial velocity measurements refine the orbit of GJ 667Cc, a super-Earth in the habitable zone of a triple-star system 23 light-years away. The new data confirms the planet spends over 90% of its orbit within the conservative habitable zone.</p>
+        <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
+          data-en="GJ 667Cc: Updated Orbital Parameters Improve HZ Confidence"
+          data-kz="GJ 667Cc: Жаңартылған орбиталық параметрлер ТА сенімділігін арттырды">GJ 667Cc: Updated Orbital Parameters Improve HZ Confidence</h4>
+        <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
+          data-en="Precision radial velocity measurements refine the orbit of GJ 667Cc, a super-Earth in the habitable zone of a triple-star system 23 light-years away. The new data confirms the planet spends over 90% of its orbit within the conservative habitable zone."
+          data-kz="Дәл радиалды жылдамдық өлшемдері 23 жарық жыл қашықтағы үш жұлдызды жүйедегі тіршілік аймағындағы GJ 667Cc суперже-жерінің орбитасын нақтылады. Жаңа деректер планета уақытының 90%-дан астамын консервативті тіршілік аймағында өткізетінін растайды.">Precision radial velocity measurements refine the orbit of GJ 667Cc, a super-Earth in the habitable zone of a triple-star system 23 light-years away. The new data confirms the planet spends over 90% of its orbit within the conservative habitable zone.</p>
         <div style="font-size:0.68rem;color:var(--text-faint)">Oct 2024 · HARPS Spectrograph</div>
       </div>
 
@@ -945,8 +978,12 @@
           <span class="badge badge-info">JWST</span>
           <span class="badge" style="margin-left:4px;background:rgba(212,165,116,0.12);color:var(--accent);border:1px solid rgba(212,165,116,0.25)">Mission</span>
         </div>
-        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">55 Cancri e: Magma Ocean and Shifting Atmosphere Confirmed</h4>
-        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">JWST's MIRI instrument captures unprecedented thermal maps of 55 Cancri e revealing a dynamic lava world with a volatile atmosphere that appears and disappears as the planet orbits its star every 17.7 hours. The discovery offers insight into early Earth-like geological processes.</p>
+        <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
+          data-en="55 Cancri e: Magma Ocean and Shifting Atmosphere Confirmed"
+          data-kz="55 Cancri e: Магма мұхиты мен ауыспалы атмосфера расталды">55 Cancri e: Magma Ocean and Shifting Atmosphere Confirmed</h4>
+        <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
+          data-en="JWST's MIRI instrument captures unprecedented thermal maps of 55 Cancri e revealing a dynamic lava world with a volatile atmosphere that appears and disappears as the planet orbits its star every 17.7 hours. The discovery offers insight into early Earth-like geological processes."
+          data-kz="JWST-тің MIRI аспабы 55 Cancri e планетасының теңдесі жоқ термиялық карталарын алып, 17,7 сағатта бір жұлдыз айналатын ұшпа атмосферасы бар динамикалық лава әлемін ашты. Жаңалық ерте Жер геологиялық процестерін зерттеуге мүмкіндік береді.">JWST's MIRI instrument captures unprecedented thermal maps of 55 Cancri e revealing a dynamic lava world with a volatile atmosphere that appears and disappears as the planet orbits its star every 17.7 hours. The discovery offers insight into early Earth-like geological processes.</p>
         <div style="font-size:0.68rem;color:var(--text-faint)">May 2024 · MIRI / JWST</div>
       </div>
 
@@ -954,8 +991,12 @@
         <div style="margin-bottom:10px">
           <span class="badge badge-success">Discovery</span>
         </div>
-        <h4 style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4">Wolf 1061c: One of the Closest Potentially Habitable Worlds</h4>
-        <p style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px">At just 13.8 light-years away, Wolf 1061c remains one of the closest known super-Earths in the habitable zone. New high-resolution imaging constraints rule out a large moon companion and refine the planet's bulk composition to a likely rocky interior with possible surface water.</p>
+        <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
+          data-en="Wolf 1061c: One of the Closest Potentially Habitable Worlds"
+          data-kz="Wolf 1061c: Ең жақын тіршілікке жарамды болуы мүмкін әлемдердің бірі">Wolf 1061c: One of the Closest Potentially Habitable Worlds</h4>
+        <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
+          data-en="At just 13.8 light-years away, Wolf 1061c remains one of the closest known super-Earths in the habitable zone. New high-resolution imaging constraints rule out a large moon companion and refine the planet's bulk composition to a likely rocky interior with possible surface water."
+          data-kz="Небары 13,8 жарық жыл қашықтықта орналасқан Wolf 1061c тіршілік аймағындағы ең жақын белгілі суперже-жерлердің бірі болып қала береді. Жаңа жоғары ажыратымдылықты кескіндеу деректері үлкен ай серігін жоққа шығарып, планетаның беттік суы болуы мүмкін тасты ішкі құрылымын нақтылады.">At just 13.8 light-years away, Wolf 1061c remains one of the closest known super-Earths in the habitable zone. New high-resolution imaging constraints rule out a large moon companion and refine the planet's bulk composition to a likely rocky interior with possible surface water.</p>
         <div style="font-size:0.68rem;color:var(--text-faint)">Feb 2025 · AAT / UCSD</div>
       </div>
 
@@ -2237,6 +2278,20 @@ document.addEventListener('DOMContentLoaded', function() {
   const selPlanet = {{ current_planets[selected_planet]|tojson if current_planets else 'null' }};
   if (selPlanet) setTimeout(() => fetchAIPlanetReport(selPlanet), 800);
   {% endif %}
+});
+
+// ── News language swap ────────────────────────────────────────────────────────
+(function applyNewsLang() {
+  const lang = window.ATLAS?.lang || '{{ lang }}';
+  if (lang !== 'kz') return;
+  document.querySelectorAll('.news-title[data-kz]').forEach(el => { el.textContent = el.dataset.kz; });
+  document.querySelectorAll('.news-body[data-kz]').forEach(el => { el.textContent = el.dataset.kz; });
+})();
+document.addEventListener('DOMContentLoaded', function() {
+  const lang = window.ATLAS?.lang || '{{ lang }}';
+  if (lang !== 'kz') return;
+  document.querySelectorAll('.news-title[data-kz]').forEach(el => { el.textContent = el.dataset.kz; });
+  document.querySelectorAll('.news-body[data-kz]').forEach(el => { el.textContent = el.dataset.kz; });
 });
 
 // ── MISSIONS: AI hint при выборе звезды ──────────────────────────────────────
