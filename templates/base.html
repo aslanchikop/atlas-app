@@ -73,6 +73,12 @@
         <a href="{{ request.path }}?lang=en" class="btn-lang">🇬🇧 EN</a>
       {% endif %}
       <a href="/explore?lang={{ lang }}" class="btn-cta">{% if lang == 'en' %}Explore →{% else %}Зерттеу →{% endif %}</a>
+      <!-- User badge (shown after login) -->
+      <div class="nav-user" id="navUser" style="display:none">
+        <span class="nav-user-avatar" id="navUserAvatar"></span>
+        <span class="nav-user-name"  id="navUserName"></span>
+        <button class="nav-user-logout" id="navLogoutBtn" title="{% if lang == 'en' %}Logout{% else %}Шығу{% endif %}">⏏</button>
+      </div>
     </div>
   </nav>
 
@@ -92,6 +98,162 @@
 
 <!-- Toast container -->
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- ── Auth Modal ─────────────────────────────────────────── -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card" id="authCard">
+    <div class="auth-stars">✦ ✧ ✦</div>
+    <div class="auth-logo">🛰️</div>
+    <h2 class="auth-title" id="authTitle">
+      {% if lang == 'kz' %}ATLAS-қа қош келдіңіз{% else %}Welcome to ATLAS{% endif %}
+    </h2>
+    <p class="auth-sub" id="authSub">
+      {% if lang == 'kz' %}Прогресс браузерде сақталады — кіру есімін таңдаңыз{% else %}Your progress is saved in your browser — pick a username{% endif %}
+    </p>
+
+    <!-- Returning user panel -->
+    <div class="auth-returning" id="authReturning" style="display:none">
+      <div class="auth-return-card" id="authReturnCard"></div>
+      <button class="auth-btn" id="authContinueBtn">
+        {% if lang == 'kz' %}Жалғастыру →{% else %}Continue →{% endif %}
+      </button>
+      <button class="auth-link" id="authSwitchBtn">
+        {% if lang == 'kz' %}Басқа аккаунт{% else %}Use different account{% endif %}
+      </button>
+    </div>
+
+    <!-- New user form -->
+    <div class="auth-form" id="authForm">
+      <div class="auth-avatars" id="authAvatars">
+        <span class="auth-av" data-av="🚀">🚀</span>
+        <span class="auth-av" data-av="🔭">🔭</span>
+        <span class="auth-av selected" data-av="⭐">⭐</span>
+        <span class="auth-av" data-av="🌍">🌍</span>
+        <span class="auth-av" data-av="🐾">🐾</span>
+        <span class="auth-av" data-av="🛸">🛸</span>
+      </div>
+      <input class="auth-input" id="authNameInput" type="text" maxlength="20"
+             placeholder="{% if lang == 'kz' %}Есіміңіз (2-20 таңба){% else %}Your name (2–20 chars){% endif %}"
+             autocomplete="off">
+      <p class="auth-err" id="authErr"></p>
+      <button class="auth-btn" id="authSubmitBtn">
+        {% if lang == 'kz' %}Миссияны бастау 🚀{% else %}Start Mission 🚀{% endif %}
+      </button>
+    </div>
+
+    <p class="auth-note">
+      {% if lang == 'kz' %}Деректер тек сіздің браузерде сақталады — серверге жіберілмейді{% else %}Data stays only in your browser — nothing sent to any server{% endif %}
+    </p>
+  </div>
+</div>
+
+<style>
+/* ── Auth overlay ── */
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 99999;
+  background: rgba(4, 2, 16, 0.92);
+  backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 1; transition: opacity 0.4s ease;
+}
+.auth-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.auth-card {
+  background: rgba(12, 6, 30, 0.98);
+  border: 1px solid rgba(120,80,255,0.4);
+  border-radius: 24px;
+  padding: 36px 32px 28px;
+  width: 360px; max-width: calc(100vw - 32px);
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(120,80,255,0.12);
+  animation: auth-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes auth-in {
+  from { transform: translateY(30px) scale(0.92); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.auth-stars { color: rgba(180,160,255,0.35); font-size: 13px; letter-spacing: 8px; margin-bottom: 12px; }
+.auth-logo  { font-size: 44px; margin-bottom: 10px; }
+.auth-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #e8e0ff; margin: 0 0 8px; }
+.auth-sub   { font-size: 13px; color: rgba(180,170,220,0.65); margin: 0 0 24px; line-height: 1.5; }
+
+/* Avatar picker */
+.auth-avatars { display: flex; justify-content: center; gap: 10px; margin-bottom: 18px; }
+.auth-av {
+  width: 44px; height: 44px; font-size: 22px;
+  border-radius: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid rgba(120,80,255,0.2);
+  background: rgba(120,80,255,0.07);
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.auth-av:hover    { border-color: rgba(120,80,255,0.5); transform: scale(1.1); }
+.auth-av.selected { border-color: rgba(120,80,255,0.9); background: rgba(120,80,255,0.2); }
+
+/* Input */
+.auth-input {
+  width: 100%; box-sizing: border-box;
+  background: rgba(20,12,45,0.8);
+  border: 1px solid rgba(120,80,255,0.3);
+  border-radius: 12px; color: #e0d8ff;
+  font-size: 15px; font-family: 'Inter', sans-serif;
+  padding: 12px 16px; outline: none; margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.auth-input:focus { border-color: rgba(120,80,255,0.8); }
+.auth-input::placeholder { color: rgba(150,140,200,0.4); }
+
+.auth-err { font-size: 12px; color: #f87171; min-height: 16px; margin: 0 0 10px; }
+
+/* Buttons */
+.auth-btn {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, rgba(100,60,220,0.9), rgba(140,80,255,0.9));
+  border: none; border-radius: 12px; color: #fff;
+  font-size: 15px; font-family: 'Space Grotesk', sans-serif; font-weight: 600;
+  cursor: pointer; margin-bottom: 10px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.auth-btn:hover  { opacity: 0.9; }
+.auth-btn:active { transform: scale(0.98); }
+.auth-link {
+  background: none; border: none; color: rgba(150,140,200,0.6);
+  font-size: 12.5px; cursor: pointer; text-decoration: underline;
+  font-family: 'Inter', sans-serif;
+}
+.auth-link:hover { color: rgba(180,170,220,0.9); }
+.auth-note { font-size: 11px; color: rgba(120,110,160,0.5); margin: 14px 0 0; }
+
+/* Returning user card */
+.auth-return-card {
+  background: rgba(100,60,220,0.12);
+  border: 1px solid rgba(120,80,255,0.3);
+  border-radius: 14px; padding: 14px 16px;
+  margin-bottom: 16px; text-align: left;
+  display: flex; align-items: center; gap: 12px;
+}
+.auth-return-avatar { font-size: 28px; }
+.auth-return-info   { flex: 1; }
+.auth-return-name   { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: #e8e0ff; }
+.auth-return-stats  { font-size: 11.5px; color: rgba(160,150,200,0.65); margin-top: 2px; }
+
+/* Navbar user badge */
+.nav-user {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(100,60,220,0.15);
+  border: 1px solid rgba(120,80,255,0.3);
+  border-radius: 20px; padding: 4px 10px 4px 6px;
+}
+.nav-user-avatar { font-size: 18px; line-height: 1; }
+.nav-user-name   { font-size: 13px; font-weight: 600; color: #d8d0f8; font-family: 'Space Grotesk', sans-serif; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-user-logout {
+  background: none; border: none; color: rgba(160,150,200,0.5);
+  font-size: 14px; cursor: pointer; padding: 2px; line-height: 1;
+  transition: color 0.2s;
+}
+.nav-user-logout:hover { color: #f87171; }
+</style>
 
 <!-- ── Laika Chat Panel ──────────────────────────────────── -->
 <div class="lk-panel" id="laikaPanel">
@@ -852,6 +1014,181 @@
   // ── Init ─────────────────────────────────────────────────
   setTimeout(() => { say(rand(M.greet), 4200); scheduleWander(); }, 1400);
   scheduleThought(); resetSleep();
+})();
+</script>
+
+<!-- ── Auth JS ────────────────────────────────────────────── -->
+<script>
+(function() {
+  const LANG      = "{{ lang }}" === 'kz' ? 'kz' : 'en';
+  const LS_USERS  = 'atlas_users';
+  const LS_CUR    = 'atlas_current';
+  const LS_DATA   = u => 'atlas_data_' + u;
+
+  const T = {
+    en: { saved: 'Progress saved ✓', loggedOut: 'Logged out', hello: 'Hello', systems: 'systems', achievements: 'achievements' },
+    kz: { saved: 'Сақталды ✓', loggedOut: 'Шығып кеттіңіз', hello: 'Сәлем', systems: 'жүйе', achievements: 'жетістік' },
+  }[LANG];
+
+  // ── Storage helpers ──────────────────────────────────────
+  function getUsers()  { try { return JSON.parse(localStorage.getItem(LS_USERS) || '[]'); } catch { return []; } }
+  function getCurrent(){ return localStorage.getItem(LS_CUR) || null; }
+  function getUserData(u) { try { return JSON.parse(localStorage.getItem(LS_DATA(u)) || 'null'); } catch { return null; } }
+  function saveUserData(u, d) { localStorage.setItem(LS_DATA(u), JSON.stringify(d)); }
+
+  function addUser(username, avatar) {
+    const users = getUsers().filter(u => u.username !== username);
+    users.unshift({ username, avatar, created: new Date().toISOString().slice(0,10) });
+    localStorage.setItem(LS_USERS, JSON.stringify(users.slice(0, 10)));
+  }
+
+  // ── Save state from server → localStorage ────────────────
+  async function saveProgress(username) {
+    try {
+      const r = await fetch('/api/get-state');
+      const d = await r.json();
+      saveUserData(username, d);
+    } catch {}
+  }
+
+  // ── Auto-save after key events ────────────────────────────
+  const _f = window.fetch;
+  window._authFetch = window.fetch = function(...args) {
+    const url = typeof args[0] === 'string' ? args[0] : '';
+    const p = _f.apply(this, args);
+    const cur = getCurrent();
+    if (cur && (url.includes('/api/scan') || url.includes('/api/achievement') || url.includes('/api/travel'))) {
+      p.then(() => saveProgress(cur)).catch(() => {});
+    }
+    return p;
+  };
+
+  window.addEventListener('beforeunload', () => {
+    const cur = getCurrent();
+    if (cur) {
+      // Synchronous save best-effort (sendBeacon)
+      const data = new FormData();
+      navigator.sendBeacon && navigator.sendBeacon('/api/get-state');
+      saveProgress(cur);
+    }
+  });
+
+  // ── Login flow ────────────────────────────────────────────
+  async function doLogin(username, avatar) {
+    const savedState = getUserData(username);
+    const body = { username };
+    if (savedState) body.state = savedState;
+    try {
+      await fetch('/api/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+    } catch {}
+    addUser(username, avatar);
+    localStorage.setItem(LS_CUR, username);
+    showNavUser(username, avatar, savedState);
+    hideModal();
+  }
+
+  function showNavUser(username, avatar, state) {
+    const el = document.getElementById('navUser');
+    if (!el) return;
+    document.getElementById('navUserAvatar').textContent = avatar || '⭐';
+    document.getElementById('navUserName').textContent   = username;
+    el.style.display = 'flex';
+
+    document.getElementById('navLogoutBtn').onclick = async () => {
+      const cur = getCurrent();
+      if (cur) await saveProgress(cur);
+      await fetch('/api/logout', { method: 'POST' });
+      localStorage.removeItem(LS_CUR);
+      el.style.display = 'none';
+      showModal();
+    };
+  }
+
+  // ── Modal ─────────────────────────────────────────────────
+  function hideModal() {
+    const ov = document.getElementById('authOverlay');
+    ov.classList.add('hidden');
+    setTimeout(() => { ov.style.display = 'none'; }, 400);
+  }
+
+  function showModal() {
+    const ov = document.getElementById('authOverlay');
+    ov.style.display = 'flex';
+    setTimeout(() => ov.classList.remove('hidden'), 10);
+    setupModal();
+  }
+
+  function setupModal() {
+    const cur    = getCurrent();
+    const users  = getUsers();
+    const retEl  = document.getElementById('authReturning');
+    const formEl = document.getElementById('authForm');
+
+    if (cur && users.find(u => u.username === cur)) {
+      // Show returning user
+      const u    = users.find(x => x.username === cur);
+      const data = getUserData(cur);
+      const sys  = data ? Object.keys(data.systems || {}).length : 0;
+      const ach  = data ? Object.keys(data.achievements || {}).length : 0;
+      document.getElementById('authReturnCard').innerHTML = `
+        <div class="auth-return-avatar">${u.avatar || '⭐'}</div>
+        <div class="auth-return-info">
+          <div class="auth-return-name">${u.username}</div>
+          <div class="auth-return-stats">${sys} ${T.systems} · ${ach} ${T.achievements} · ${u.created || ''}</div>
+        </div>`;
+      retEl.style.display  = 'block';
+      formEl.style.display = 'none';
+      document.getElementById('authTitle').textContent = LANG === 'kz' ? `${T.hello}, ${u.username}! 👋` : `${T.hello}, ${u.username}! 👋`;
+      document.getElementById('authSub').textContent   = LANG === 'kz' ? 'Прогресіңіз сақталды' : 'Your progress has been saved';
+
+      document.getElementById('authContinueBtn').onclick = () => doLogin(u.username, u.avatar);
+      document.getElementById('authSwitchBtn').onclick   = () => {
+        retEl.style.display = 'none'; formEl.style.display = 'block';
+        document.getElementById('authTitle').textContent = LANG === 'kz' ? 'ATLAS-қа қош келдіңіз' : 'Welcome to ATLAS';
+        document.getElementById('authSub').textContent   = LANG === 'kz' ? 'Жаңа аккаунт жасаңыз' : 'Create a new account';
+      };
+    } else {
+      retEl.style.display  = 'none';
+      formEl.style.display = 'block';
+    }
+  }
+
+  // Avatar picker
+  document.querySelectorAll('.auth-av').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.auth-av').forEach(a => a.classList.remove('selected'));
+      el.classList.add('selected');
+    });
+  });
+
+  // Submit
+  document.getElementById('authSubmitBtn').addEventListener('click', () => {
+    const name = document.getElementById('authNameInput').value.trim();
+    const av   = document.querySelector('.auth-av.selected')?.dataset.av || '⭐';
+    const err  = document.getElementById('authErr');
+    if (name.length < 2) { err.textContent = LANG === 'kz' ? 'Кем дегенде 2 таңба' : 'At least 2 characters'; return; }
+    if (name.length > 20) { err.textContent = LANG === 'kz' ? 'Ең көбі 20 таңба' : 'Max 20 characters'; return; }
+    err.textContent = '';
+    doLogin(name, av);
+  });
+
+  document.getElementById('authNameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('authSubmitBtn').click();
+  });
+
+  // ── Init ─────────────────────────────────────────────────
+  const cur = getCurrent();
+  const users = getUsers();
+  if (cur && users.find(u => u.username === cur)) {
+    const u = users.find(x => x.username === cur);
+    // Auto-login silently
+    doLogin(u.username, u.avatar);
+  } else {
+    showModal();
+  }
 })();
 </script>
 

@@ -67,8 +67,8 @@
       <div class="step-card">
         <span class="step-num">02</span>
         <span class="step-icon">🎯</span>
-        <div class="step-title">{% if lang == 'en' %}Target a Star{% else %}Жұлдыз белгілеңіз{% endif %}</div>
-        <div class="step-desc">{% if lang == 'en' %}Pick a target star from the catalog or search NASA Archive{% else %}NASA мұрағатынан жұлдыз таңдаңыз{% endif %}</div>
+        <div class="step-title">{% if lang == 'en' %}Auto-Target{% else %}Авто-нысан{% endif %}</div>
+        <div class="step-desc">{% if lang == 'en' %}ATLAS randomly picks an unscanned star — no repeats{% else %}ATLAS кездейсоқ сканерленбеген жұлдызды таңдайды{% endif %}</div>
       </div>
       <div class="step-card">
         <span class="step-num">03</span>
@@ -106,24 +106,16 @@
             </div>
           </div>
 
-          <!-- Star select -->
-          <div class="form-group">
-            <label class="form-label">{% if lang == 'en' %}Target Star{% else %}Нысан Жұлдыз{% endif %}</label>
-            <div class="select-wrapper">
-              <select class="form-select" id="starSelect" onchange="onStarSelectChange(this.value)"></select>
-            </div>
-          </div>
-
-          <!-- AI catalog hint -->
-          <div id="catalogHintBox" style="display:none;margin-bottom:12px;
-               padding:10px 14px;background:rgba(212,165,116,0.06);
-               border:1px solid rgba(212,165,116,0.2);border-radius:10px">
+          <!-- Next target indicator -->
+          <div id="nextTargetBox" style="margin-bottom:12px;padding:10px 14px;
+               background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);
+               border-radius:10px;display:none">
             <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;
-                        color:var(--accent);margin-bottom:4px;display:flex;align-items:center;gap:6px">
-              <span>✨</span> {% if lang == 'en' %}Why scan this star?{% else %}Неліктен бұл жұлдызды сканерлеу керек?{% endif %}
+                        color:rgba(0,212,255,0.7);margin-bottom:4px">
+              🎯 {% if lang == 'en' %}Next Target{% else %}Келесі нысан{% endif %}
             </div>
-            <div id="catalogHintText"
-                 style="font-size:0.77rem;color:var(--text-muted);line-height:1.6"></div>
+            <div id="nextTargetName"
+                 style="font-size:0.90rem;font-weight:600;color:var(--text);word-break:break-word"></div>
           </div>
 
           <button class="btn btn-primary btn-full mb-12" id="scanBtn" onclick="scanStar()">
@@ -141,10 +133,24 @@
           </div>
 
           <!-- Auto-scan -->
-          <button class="btn btn-secondary btn-full mb-16" id="autoScanBtn" onclick="startAutoScan()">
-            <span>⚡</span> {% if lang == 'en' %}Auto-Scan Catalog{% else %}Каталогты авто-сканерлеу{% endif %}
+          <button class="btn btn-primary btn-full mb-8" id="autoScanBtn" onclick="startAutoScan()" style="background:linear-gradient(135deg,rgba(60,180,120,0.85),rgba(40,150,100,0.9));border-color:rgba(60,180,120,0.4)">
+            <span id="autoScanIcon">⚡</span>
+            <span id="autoScanLabel">{% if lang == 'en' %}Auto-Scan All{% else %}Барлығын сканерлеу{% endif %}</span>
           </button>
-          <div id="autoScanStatus" class="text-xs text-muted hidden" style="text-align:center;margin-bottom:12px"></div>
+
+          <!-- Autonomous mission status -->
+          <div id="missionStatus" style="display:none;margin-bottom:12px;padding:12px 14px;
+               border:1px solid rgba(60,180,120,0.2);border-radius:10px;background:rgba(60,180,120,0.04)">
+            <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;
+                        color:rgba(60,220,120,0.7);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+              <span id="missionPulse" style="display:inline-block;width:6px;height:6px;border-radius:50%;
+                    background:rgba(60,220,120,0.9);animation:pulse-dot 1.2s ease-in-out infinite"></span>
+              {% if lang == 'en' %}Autonomous Scan Active{% else %}Автономды скан белсенді{% endif %}
+            </div>
+            <div id="missionCurrent" style="font-size:0.84rem;font-weight:600;color:var(--text);
+                 margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+            <div id="missionStats" style="font-size:0.72rem;color:rgba(150,200,150,0.7)"></div>
+          </div>
 
           <hr class="divider">
 
@@ -264,7 +270,7 @@
         <div class="glass" style="padding:48px 32px;text-align:center">
           <div style="font-size:3.5rem;margin-bottom:20px">🔭</div>
           <div style="font-family:var(--font-display);font-size:1.4rem;font-weight:700;margin-bottom:8px">{% if lang == 'en' %}Begin Your Mission{% else %}Миссияны бастаңыз{% endif %}</div>
-          <div style="color:var(--text-muted);font-size:0.88rem;margin-bottom:24px;max-width:340px;margin-left:auto;margin-right:auto">{% if lang == 'en' %}Select a catalog, choose a target star, and scan the system to start discovering exoplanets{% else %}Каталог таңдаңыз, мақсатты жұлдыз таңдаңыз және жүйені сканерлеңіз{% endif %}</div>
+          <div style="color:var(--text-muted);font-size:0.88rem;margin-bottom:24px;max-width:340px;margin-left:auto;margin-right:auto">{% if lang == 'en' %}Select a catalog and hit Scan — ATLAS will auto-pick a random unscanned star each time{% else %}Каталог таңдаңыз және Сканерлеу батырмасын басыңыз — ATLAS өзі кездейсоқ жұлдыз таңдайды{% endif %}</div>
           <button class="btn btn-primary" onclick="document.getElementById('scanBtn').click()">{% if lang == 'en' %}Launch First Scan{% else %}Алғашқы сканерлеуді іске қосу{% endif %}</button>
         </div>
         {% endif %}
@@ -1113,11 +1119,9 @@ let currentTab = "{{ tab }}";
 let autoScanRunning = false;
 const lang = "{{ lang }}";
 
-// Populate star list on load
-updateStarList();
-
 // Init charts if tabs are active
 document.addEventListener('DOMContentLoaded', function() {
+  updateStarList();
   updateHeaderStats();
   if (currentTab === 'system') loadSystemChart();
   if (currentTab === 'map')    loadStarmap();
@@ -1139,30 +1143,30 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
 });
 
-// ── Star list ─────────────────────────────────────────────
+// ── Star list / next target ───────────────────────────────
+let _nextTarget = null;
+
 function updateStarList() {
-  const catKey = document.getElementById('catalogSelect').value;
-  const cat    = CATALOG_DATA[catKey];
-  const sel    = document.getElementById('starSelect');
-  const stars  = cat.stars.filter(s => !SCANNED.includes(s));
-  sel.innerHTML = '';
-  if (stars.length === 0) {
-    sel.innerHTML = '<option>All stars scanned! ✓</option>';
-    document.getElementById('progressLabel').textContent = 'Progress: ' + cat.stars.length + '/' + cat.stars.length;
-    document.getElementById('progressPct').textContent = '100%';
-    document.getElementById('progressFill').style.width = '100%';
-  } else {
-    stars.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s; opt.textContent = s;
-      sel.appendChild(opt);
-    });
-  }
-  const done = cat.stars.length - stars.length;
-  const pct  = Math.round(done / cat.stars.length * 100);
-  document.getElementById('progressLabel').textContent = `Progress: ${done}/${cat.stars.length}`;
+  const catKey  = document.getElementById('catalogSelect').value;
+  const cat     = CATALOG_DATA[catKey];
+  const unscanned = cat.stars.filter(s => !SCANNED.includes(s));
+  const done    = cat.stars.length - unscanned.length;
+  const pct     = Math.round(done / cat.stars.length * 100);
+  document.getElementById('progressLabel').textContent = (_kz ? 'Прогресс: ' : 'Progress: ') + done + '/' + cat.stars.length;
   document.getElementById('progressPct').textContent   = pct + '%';
   document.getElementById('progressFill').style.width  = pct + '%';
+
+  const box  = document.getElementById('nextTargetBox');
+  const nameEl = document.getElementById('nextTargetName');
+  if (unscanned.length === 0) {
+    _nextTarget = null;
+    if (box) { box.style.display = 'block'; nameEl.textContent = _kz ? 'Барлық жұлдыздар сканерленді ✓' : 'All stars scanned! ✓'; }
+    document.getElementById('scanBtn').disabled = true;
+  } else {
+    _nextTarget = unscanned[Math.floor(Math.random() * unscanned.length)];
+    if (box) { box.style.display = 'block'; nameEl.textContent = _nextTarget; }
+    document.getElementById('scanBtn').disabled = false;
+  }
 }
 
 // ── Scan star ─────────────────────────────────────────────
@@ -1195,7 +1199,7 @@ function hideTerminal() {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function scanStar(starName) {
-  const name = starName || document.getElementById('starSelect').value;
+  const name = starName || _nextTarget;
   if (!name || name.includes('All stars')) return;
   const btn = document.getElementById('scanBtn');
   btn.disabled = true;
@@ -1253,10 +1257,9 @@ async function scanStar(starName) {
   const data = fetchResult;
   if (data.error) {
     termLog(`❌ ${_kz ? 'ЖАУАП ЖОҚ' : 'NO DATA FOUND'}: "${name}"`, 'error');
-    termLog(_kz ? `Кеңес: NASA мұрағатындағы атауды тексеріңіз (мыс. "Proxima Cen", "TRAPPIST-1")` : `Tip: Check the NASA archive name (e.g. "Proxima Cen", "TRAPPIST-1")`, 'dim');
     document.getElementById('scanTermStatus').textContent = '● NO DATA';
     document.getElementById('scanTermStatus').style.color = '#fbbf24';
-    showToast('Scan Failed', data.error, 'error');
+    if (!_autoScanMode) showToast('Scan Failed', data.error, 'error');
     btn.disabled = false;
     document.getElementById('scanBtnText').textContent = _kz ? 'Жүйені сканерлеу' : 'Scan System';
     document.getElementById('scanBtnIcon').textContent = '🔍';
@@ -1301,10 +1304,14 @@ async function scanStar(starName) {
 
   await sleep(800);
   hideTerminal();
-  switchTab('system');
-
-  // Reload page to refresh server-side state — but do it quietly after a delay
-  setTimeout(() => location.reload(), 2500);
+  if (!_autoScanMode) {
+    switchTab('system');
+    setTimeout(() => location.reload(), 2500);
+  } else {
+    _autoDone++;
+    _autoFound += pl.length;
+    _autoHZ    += habCount;
+  }
 
   btn.disabled = false;
   document.getElementById('scanBtnText').textContent = _kz ? 'Жүйені сканерлеу' : 'Scan System';
@@ -1319,34 +1326,68 @@ async function manualSearch() {
   await scanStar(q);
 }
 
-// ── Auto-scan ─────────────────────────────────────────────
-let autoScanIndex = 0;
-let autoScanStars = [];
-async function startAutoScan() {
-  if (autoScanRunning) { autoScanRunning = false; document.getElementById('autoScanBtn').textContent = '⚡ Auto-Scan Catalog'; return; }
+// ── Autonomous scan ───────────────────────────────────────
+let _autoScanMode  = false;
+let _autoFound     = 0;
+let _autoHZ        = 0;
+let _autoDone      = 0;
+
+function _missionUpdate(current) {
+  const el = document.getElementById('missionStatus');
+  const cur = document.getElementById('missionCurrent');
+  const stats = document.getElementById('missionStats');
+  if (!el) return;
+  el.style.display = 'block';
+  if (current) cur.textContent = '🔭 ' + current;
   const catKey = document.getElementById('catalogSelect').value;
-  autoScanStars = CATALOG_DATA[catKey].stars.filter(s => !SCANNED.includes(s));
-  if (autoScanStars.length === 0) { showToast('info', 'Complete', 'All stars already scanned!'); return; }
-  autoScanRunning = true;
-  autoScanIndex = 0;
-  document.getElementById('autoScanBtn').textContent = '⏹ Stop Auto-Scan';
-  await runNextAutoScan();
+  const total  = CATALOG_DATA[catKey].stars.length;
+  stats.textContent = `${_kz ? 'Сканерленді' : 'Scanned'}: ${_autoDone}  ·  ${_kz ? 'Планета' : 'Planets'}: ${_autoFound}  ·  HZ: ${_autoHZ}  ·  ${_kz ? 'Қалды' : 'Left'}: ${total - SCANNED.length}`;
 }
-async function runNextAutoScan() {
-  if (!autoScanRunning || autoScanIndex >= autoScanStars.length) {
-    autoScanRunning = false;
-    document.getElementById('autoScanBtn').textContent = '⚡ Auto-Scan Catalog';
-    document.getElementById('autoScanStatus').classList.add('hidden');
-    if (autoScanIndex > 0) showToast('success', 'Auto-Scan Complete!', `Scanned ${autoScanIndex} systems`);
+
+function _missionStop() {
+  _autoScanMode = false;
+  const el = document.getElementById('missionStatus');
+  if (el) el.style.display = 'none';
+  document.getElementById('autoScanIcon').textContent  = '⚡';
+  document.getElementById('autoScanLabel').textContent = _kz ? 'Барлығын сканерлеу' : 'Auto-Scan All';
+}
+
+async function startAutoScan() {
+  if (_autoScanMode) { _missionStop(); return; }
+
+  const catKey   = document.getElementById('catalogSelect').value;
+  const unscanned = CATALOG_DATA[catKey].stars.filter(s => !SCANNED.includes(s));
+  if (unscanned.length === 0) {
+    showToast(_kz ? 'Барлық жұлдыздар сканерленді!' : 'All stars scanned!', 'info');
     return;
   }
-  const star = autoScanStars[autoScanIndex];
-  const status = document.getElementById('autoScanStatus');
-  status.classList.remove('hidden');
-  status.textContent = `Scanning ${autoScanIndex + 1}/${autoScanStars.length}: ${star}…`;
+
+  _autoScanMode = true; _autoFound = 0; _autoHZ = 0; _autoDone = 0;
+  document.getElementById('autoScanIcon').textContent  = '⏹';
+  document.getElementById('autoScanLabel').textContent = _kz ? 'Тоқтату' : 'Stop';
+  _missionUpdate('—');
+  await runNextAutoScan();
+}
+
+async function runNextAutoScan() {
+  if (!_autoScanMode) return;
+
+  const catKey    = document.getElementById('catalogSelect').value;
+  const unscanned = CATALOG_DATA[catKey].stars.filter(s => !SCANNED.includes(s));
+
+  if (unscanned.length === 0) {
+    showToast(_kz ? `Авто-скан аяқталды! ${_autoDone} жүйе` : `Mission complete! ${_autoDone} systems scanned`, 'success');
+    setTimeout(() => location.reload(), 1800);
+    _missionStop();
+    return;
+  }
+
+  // Pick a random unscanned star — system discovers autonomously
+  const star = unscanned[Math.floor(Math.random() * unscanned.length)];
+  _missionUpdate(star);
   await scanStar(star);
-  autoScanIndex++;
-  setTimeout(runNextAutoScan, 1500);
+  await sleep(800);
+  runNextAutoScan();
 }
 
 // ── Select planet ─────────────────────────────────────────

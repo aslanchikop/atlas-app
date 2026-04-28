@@ -93,7 +93,7 @@ function animateCounter(el, target) {
 }
 
 // ── Toast Notifications ─────────────────────────────────────────
-function showToast(message, type = 'info', duration = 4000) {
+function showToast(message, type = 'info', duration = 5000) {
   const container = document.getElementById('toastContainer');
   if (!container) return;
 
@@ -239,12 +239,12 @@ window.debounce     = debounce;
     setTimeout(() => {
       toast.classList.remove('toast-show');
       toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-    }, 6000);
+    }, 5000);
   }
 
-  // Fire first alert after 18–35 seconds, then random intervals 45–120s
+  // Fire first alert after 60–90s, then every 120–180s
   function scheduleNext() {
-    const delay = (45 + Math.random() * 75) * 1000;
+    const delay = (120 + Math.random() * 60) * 1000;
     setTimeout(() => {
       const alert = ALERTS[Math.floor(Math.random() * ALERTS.length)];
       showConspiracyToast(alert);
@@ -252,11 +252,10 @@ window.debounce     = debounce;
     }, delay);
   }
 
-  // Initial delay: 18–35 seconds after page load
   setTimeout(() => {
     const alert = ALERTS[Math.floor(Math.random() * ALERTS.length)];
     showConspiracyToast(alert);
     scheduleNext();
-  }, (18 + Math.random() * 17) * 1000);
+  }, (60 + Math.random() * 30) * 1000);
 })();
 window.animateCounter = animateCounter;

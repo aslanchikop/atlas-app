@@ -70,6 +70,51 @@ def get_uid():
         session['uid'] = str(random.randint(10**7, 10**8))
     return session['uid']
 
+# ── Auth API ──────────────────────────────────────────────────────────────────
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data     = request.get_json() or {}
+    username = (data.get('username') or '').strip()[:30]
+    if len(username) < 2:
+        return jsonify({'error': 'Username too short'}), 400
+    session['uid'] = 'u_' + username
+    saved = data.get('state')
+    if saved and isinstance(saved, dict):
+        uid = session['uid']
+        if uid not in _state:
+            _state[uid] = {
+                'lang': 'en', 'systems': {}, 'scanned': [],
+                'habitable_count': 0, 'chat': [], 'laika_chat': [],
+                'achievements': {}, 'log': [], 'compare': [],
+                'custom_planets': {}, 'quote_index': 0
+            }
+        for key in ('lang','systems','scanned','habitable_count',
+                    'achievements','log','compare','custom_planets','quote_index'):
+            if key in saved:
+                _state[uid][key] = saved[key]
+    return jsonify({'ok': True, 'uid': session['uid']})
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    session.clear()
+    return jsonify({'ok': True})
+
+@app.route('/api/get-state', methods=['GET'])
+def api_get_state():
+    s = get_state()
+    return jsonify({
+        'lang':            s.get('lang', 'en'),
+        'systems':         s.get('systems', {}),
+        'scanned':         s.get('scanned', []),
+        'habitable_count': s.get('habitable_count', 0),
+        'achievements':    s.get('achievements', {}),
+        'log':             s.get('log', [])[-30:],
+        'compare':         s.get('compare', []),
+        'custom_planets':  s.get('custom_planets', {}),
+        'quote_index':     s.get('quote_index', 0),
+    })
+
 def get_state():
     u = get_uid()
     if u not in _state:
