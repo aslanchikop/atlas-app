@@ -100,6 +100,38 @@ def api_logout():
     session.clear()
     return jsonify({'ok': True})
 
+@app.route('/api/discover', methods=['POST'])
+def api_discover():
+    """Query NASA Exoplanet Archive for real stars with confirmed exoplanets by category."""
+    data    = request.get_json() or {}
+    category = data.get('category', 'nearby')
+
+    # NASA TAP WHERE clauses per category
+    WHERE = {
+        'nearby':   "sy_dist<50 AND sy_dist IS NOT NULL AND pl_rade IS NOT NULL",
+        'kepler':   "disc_facility LIKE '%Kepler%' AND pl_rade IS NOT NULL",
+        'tess':     "disc_facility LIKE '%TESS%' AND pl_rade IS NOT NULL",
+        'k2':       "disc_facility LIKE '%K2%' AND pl_rade IS NOT NULL",
+        'habitable':"pl_eqt BETWEEN 200 AND 350 AND pl_rade IS NOT NULL",
+    }
+    where = WHERE.get(category, WHERE['nearby'])
+    tap_url = (
+        "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+        "?query=SELECT+DISTINCT+hostname+FROM+ps+WHERE+" + where.replace(' ', '+')
+        + "&format=json"
+    )
+    try:
+        resp = requests.get(tap_url, timeout=20)
+        if resp.ok:
+            rows  = resp.json()
+            stars = list({r['hostname'] for r in rows if r.get('hostname')})
+            random.shuffle(stars)
+            return jsonify({'ok': True, 'stars': stars, 'total': len(stars)})
+        print(f'[Discover] HTTP {resp.status_code}')
+    except Exception as e:
+        print(f'[Discover] Error: {e}')
+    return jsonify({'ok': False, 'stars': [], 'error': 'NASA API unavailable'})
+
 @app.route('/api/get-state', methods=['GET'])
 def api_get_state():
     s = get_state()

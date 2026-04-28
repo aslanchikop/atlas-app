@@ -1192,8 +1192,32 @@ function hideTerminal() {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function scanStar(starName) {
-  const name = starName || _nextTarget;
-  if (!name || name.includes('All stars')) return;
+  let name = starName;
+  // If called without a name (single scan button) — discover from NASA first
+  if (!name) {
+    const catKey = document.getElementById('catalogSelect').value;
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    document.getElementById('scanBtnText').textContent = _kz ? 'NASA іздеуде…' : 'Querying NASA…';
+    document.getElementById('scanBtnIcon').textContent = '🌐';
+    try {
+      const r = await fetch('/api/discover', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ category: catKey })
+      });
+      const d = await r.json();
+      const unscanned = (d.stars || []).filter(s => !SCANNED.includes(s));
+      name = unscanned.length ? unscanned[Math.floor(Math.random() * unscanned.length)] : null;
+    } catch(e) {}
+    if (!name) {
+      btn.disabled = false;
+      document.getElementById('scanBtnText').textContent = _kz ? 'Жүйені сканерлеу' : 'Scan System';
+      document.getElementById('scanBtnIcon').textContent = '🔍';
+      showToast(_kz ? 'Жұлдыз табылмады' : 'No stars found', 'error');
+      return;
+    }
+  }
+  if (name.includes('All stars')) return;
   const btn = document.getElementById('scanBtn');
   btn.disabled = true;
   document.getElementById('scanBtnText').textContent = _kz ? 'Сканерлеу…' : 'Scanning…';
@@ -1304,6 +1328,7 @@ async function scanStar(starName) {
     _autoDone++;
     _autoFound += pl.length;
     _autoHZ    += habCount;
+    _missionUpdate(name);   // refresh stats line
   }
 
   btn.disabled = false;
@@ -1319,22 +1344,26 @@ async function manualSearch() {
   await scanStar(q);
 }
 
-// ── Autonomous scan ───────────────────────────────────────
-let _autoScanMode  = false;
-let _autoFound     = 0;
-let _autoHZ        = 0;
-let _autoDone      = 0;
+// ── Autonomous discovery + scan ───────────────────────────
+let _autoScanMode = false;
+let _autoFound    = 0;
+let _autoHZ       = 0;
+let _autoDone     = 0;
+let _autoPool     = [];   // stars fetched from NASA
 
-function _missionUpdate(current) {
-  const el = document.getElementById('missionStatus');
-  const cur = document.getElementById('missionCurrent');
+function _missionUpdate(current, phase) {
+  const el    = document.getElementById('missionStatus');
+  const cur   = document.getElementById('missionCurrent');
   const stats = document.getElementById('missionStats');
   if (!el) return;
   el.style.display = 'block';
-  if (current) cur.textContent = '🔭 ' + current;
-  const catKey = document.getElementById('catalogSelect').value;
-  const total  = CATALOG_DATA[catKey].stars.length;
-  stats.textContent = `${_kz ? 'Сканерленді' : 'Scanned'}: ${_autoDone}  ·  ${_kz ? 'Планета' : 'Planets'}: ${_autoFound}  ·  HZ: ${_autoHZ}  ·  ${_kz ? 'Қалды' : 'Left'}: ${total - SCANNED.length}`;
+  if (phase === 'query') {
+    cur.textContent = _kz ? '🌐 NASA мұрағатына сұраныс жіберілуде…' : '🌐 Querying NASA Exoplanet Archive…';
+    stats.textContent = '';
+  } else if (current) {
+    cur.textContent = '🔭 ' + current;
+    stats.textContent = `${_kz?'Табылды':'Found'}: ${_autoDone} ${_kz?'жүйе':'systems'}  ·  ${_kz?'Планета':'Planets'}: ${_autoFound}  ·  HZ: ${_autoHZ}  ·  ${_kz?'Қалды':'Remaining'}: ${Math.max(0, _autoPool.length - SCANNED.filter(s=>_autoPool.includes(s)).length)}`;
+  }
 }
 
 function _missionStop() {
@@ -1348,34 +1377,51 @@ function _missionStop() {
 async function startAutoScan() {
   if (_autoScanMode) { _missionStop(); return; }
 
-  const catKey   = document.getElementById('catalogSelect').value;
-  const unscanned = CATALOG_DATA[catKey].stars.filter(s => !SCANNED.includes(s));
-  if (unscanned.length === 0) {
-    showToast(_kz ? 'Барлық жұлдыздар сканерленді!' : 'All stars scanned!', 'info');
-    return;
-  }
-
-  _autoScanMode = true; _autoFound = 0; _autoHZ = 0; _autoDone = 0;
+  _autoScanMode = true; _autoFound = 0; _autoHZ = 0; _autoDone = 0; _autoPool = [];
   document.getElementById('autoScanIcon').textContent  = '⏹';
   document.getElementById('autoScanLabel').textContent = _kz ? 'Тоқтату' : 'Stop';
-  _missionUpdate('—');
+  _missionUpdate(null, 'query');
+
+  // Step 1 — Ask NASA for real stars with exoplanets in this category
+  const catKey = document.getElementById('catalogSelect').value;
+  try {
+    const r = await fetch('/api/discover', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ category: catKey })
+    });
+    const d = await r.json();
+    if (!d.ok || !d.stars.length) {
+      showToast(_kz ? 'NASA мұрағатына қосылу сәтсіз' : 'Could not reach NASA Archive', 'error');
+      _missionStop(); return;
+    }
+    _autoPool = d.stars;
+    showToast(
+      _kz ? `NASA: ${d.total} жүйе табылды` : `NASA: ${d.total} systems discovered`,
+      'success'
+    );
+  } catch(e) {
+    showToast(_kz ? 'Желі қатесі' : 'Network error', 'error');
+    _missionStop(); return;
+  }
+
+  // Step 2 — Start scanning randomly from the NASA pool
   await runNextAutoScan();
 }
 
 async function runNextAutoScan() {
   if (!_autoScanMode) return;
 
-  const catKey    = document.getElementById('catalogSelect').value;
-  const unscanned = CATALOG_DATA[catKey].stars.filter(s => !SCANNED.includes(s));
-
+  // Pick a random star from NASA pool that hasn't been scanned yet
+  const unscanned = _autoPool.filter(s => !SCANNED.includes(s));
   if (unscanned.length === 0) {
-    showToast(_kz ? `Авто-скан аяқталды! ${_autoDone} жүйе` : `Mission complete! ${_autoDone} systems scanned`, 'success');
+    showToast(
+      _kz ? `Миссия аяқталды! ${_autoDone} жүйе сканерленді 🎉` : `Mission complete! ${_autoDone} systems scanned 🎉`,
+      'success'
+    );
     setTimeout(() => location.reload(), 1800);
-    _missionStop();
-    return;
+    _missionStop(); return;
   }
 
-  // Pick a random unscanned star — system discovers autonomously
   const star = unscanned[Math.floor(Math.random() * unscanned.length)];
   _missionUpdate(star);
   await scanStar(star);
