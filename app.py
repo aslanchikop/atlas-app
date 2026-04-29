@@ -9,6 +9,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
+from google import genai as _genai
+
 app = Flask(__name__)
 app.secret_key = 'atlas-v21-key-2025'
 
@@ -16,11 +18,11 @@ app.secret_key = 'atlas-v21-key-2025'
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 GEMINI_MODELS = [
     'gemini-3-flash-preview',
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
+    'gemini-flash-latest',
     'gemini-2.0-flash-lite',
+    'gemini-2.5-flash',
 ]
-GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
+_gemini_client = _genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -1316,43 +1318,42 @@ KEYWORD_RESPONSES = {
 _gemini_cache = {}
 
 def call_gemini(contents, system_text, max_tokens=350):
-    """Пробует модели по очереди; кэширует ответы по тексту последнего сообщения."""
+    """Пробует модели по очереди через google-genai SDK."""
+    if not _gemini_client:
+        return None
+
     last_msg = contents[-1]['parts'][0]['text'] if contents else ''
     cache_key = last_msg[:200]
     if cache_key in _gemini_cache:
         return _gemini_cache[cache_key]
 
-    body = {
-        'systemInstruction': {'parts': [{'text': system_text}]},
-        'contents': contents,
-        'generationConfig': {
-            'maxOutputTokens': max_tokens,
-            'temperature': 0.7,
-            'topP': 0.9,
-        }
-    }
+    # Конвертируем формат contents в SDK-формат
+    sdk_contents = []
+    for c in contents:
+        role = 'user' if c['role'] == 'user' else 'model'
+        text = c['parts'][0]['text']
+        sdk_contents.append(_genai.types.Content(role=role, parts=[_genai.types.Part(text=text)]))
+
+    config = _genai.types.GenerateContentConfig(
+        system_instruction=system_text,
+        max_output_tokens=max_tokens,
+        temperature=0.7,
+        top_p=0.9,
+    )
 
     for model in GEMINI_MODELS:
-        url = GEMINI_BASE + model + ':generateContent'
-        headers = {'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY}
         try:
-            resp = requests.post(url, json=body, headers=headers, timeout=15)
-            if resp.ok:
-                text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-                _gemini_cache[cache_key] = text
-                print(f'[Gemini] OK via {model}')
-                return text
-            elif resp.status_code == 429:
-                print(f'[Gemini] {model} → 429 quota, trying next...')
-                continue
-            elif resp.status_code == 503:
-                print(f'[Gemini] {model} → 503 overloaded, trying next...')
-                continue
-            else:
-                print(f'[Gemini] {model} → HTTP {resp.status_code}: {resp.text[:200]}')
-                continue
+            resp = _gemini_client.models.generate_content(
+                model=model,
+                contents=sdk_contents,
+                config=config,
+            )
+            text = resp.text.strip()
+            _gemini_cache[cache_key] = text
+            print(f'[Gemini] OK via {model}')
+            return text
         except Exception as e:
-            print(f'[Gemini] {model} → Exception: {e}')
+            print(f'[Gemini] {model} → {e}')
             continue
 
     return None
