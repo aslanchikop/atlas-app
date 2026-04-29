@@ -105,6 +105,25 @@ def api_logout():
     session.clear()
     return jsonify({'ok': True})
 
+@app.route('/api/gemini-test')
+def api_gemini_test():
+    result = {'key_set': bool(GEMINI_API_KEY), 'client': _gemini_client is not None}
+    if _gemini_client:
+        for model in GEMINI_MODELS:
+            try:
+                resp = _gemini_client.models.generate_content(
+                    model=model,
+                    contents=[{'role':'user','parts':[{'text':'Say OK'}]}],
+                    config=_genai.types.GenerateContentConfig(max_output_tokens=10)
+                )
+                result['ok'] = True
+                result['model'] = model
+                result['response'] = resp.text.strip()
+                break
+            except Exception as e:
+                result.setdefault('errors', {})[model] = str(e)[:200]
+    return jsonify(result)
+
 @app.route('/api/discover', methods=['POST'])
 def api_discover():
     """Query NASA Exoplanet Archive for real stars with confirmed exoplanets by category."""
