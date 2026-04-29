@@ -6,12 +6,14 @@ Autonomous Terrestrial Life Analysis System
 from flask import Flask, render_template, request, jsonify, session, send_from_directory
 import json, math, random, time, requests, os, uuid
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'atlas-v21-key-2025'
 
 # ── Google Gemini ─────────────────────────────────────────────────────────────
-GEMINI_API_KEY = 'AIzaSyCW_yNIspPEXNWkieqG2QQnqWkai5nP1Q8'
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 GEMINI_MODELS = [
     'gemini-2.5-flash-preview-05-20',
     'gemini-2.0-flash',
