@@ -1621,14 +1621,14 @@ function renderSystemViewFromData(star, planets, hostname) {
       <div class="glass metric-card"><div class="m-value">${(+star.mass||1).toFixed(2)} M☉</div><div class="m-label">⚖️ Mass</div></div>
       <div class="glass metric-card"><div class="m-value">${dist} ly</div><div class="m-label">📍 Distance</div></div>
     </div>
-    <div class="glass p-16 reveal mb-16" style="margin-bottom:16px">
+    <div class="glass p-16 mb-16" style="margin-bottom:16px">
       <div class="section-title">${hostname} — 3D Orbital Map</div>
       <div class="chart-wrap" id="systemChartWrap">
         <div class="chart-loading" id="systemChartLoading" style="display:flex"><div class="spinner"></div><span>Loading visualization…</span></div>
         <div id="systemChart"></div>
       </div>
     </div>
-    <div class="glass p-20 reveal mb-16" style="margin-bottom:16px">
+    <div class="glass p-20 mb-16" style="margin-bottom:16px">
       <div class="section-title">Planets (${planets.length})</div>
       <div class="planets-grid" id="planetCardsGrid">
         ${planets.map((p,i) => `

@@ -1070,12 +1070,35 @@
   window.addEventListener('beforeunload', () => {
     const cur = getCurrent();
     if (cur) {
-      // Synchronous save best-effort (sendBeacon)
-      const data = new FormData();
       navigator.sendBeacon && navigator.sendBeacon('/api/get-state');
       saveProgress(cur);
     }
   });
+
+  // ── Auto-restore on page load if server state was lost ────
+  (async function autoRestore() {
+    const cur = getCurrent();
+    if (!cur) return;
+    const localData = getUserData(cur);
+    if (!localData || !Object.keys(localData.systems || {}).length) return;
+    try {
+      const r = await fetch('/api/get-state');
+      const srv = await r.json();
+      if (!Object.keys(srv.systems || {}).length) {
+        // Server lost state (restart) — restore silently then reload once
+        const reloaded = sessionStorage.getItem('_atlas_restored');
+        if (reloaded) return;
+        await fetch('/api/login', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ username: cur, state: localData })
+        });
+        sessionStorage.setItem('_atlas_restored', '1');
+        window.location.reload();
+      } else {
+        sessionStorage.removeItem('_atlas_restored');
+      }
+    } catch {}
+  })();
 
   // ── Login flow ────────────────────────────────────────────
   async function doLogin(username, avatar) {
