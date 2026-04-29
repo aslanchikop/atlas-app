@@ -379,14 +379,15 @@ img { max-width: 100%; }
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin: 0 auto;
   list-style: none;
 }
 .nav-links a {
-  padding: 7px 16px;
-  font-size: 0.78rem;
+  padding: 7px 11px;
+  font-size: 0.76rem;
   font-weight: 500;
+  white-space: nowrap;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--text-muted);
