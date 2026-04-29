@@ -1154,24 +1154,53 @@
 
 <!-- SCAN TERMINAL — floating overlay -->
 <div id="scanTerminal" style="display:none;position:fixed;left:50%;bottom:32px;
-     transform:translateX(-50%);width:min(680px,92vw);z-index:8888;
+     transform:translateX(-50%);width:min(800px,96vw);z-index:8888;
      background:rgba(5,3,15,0.97);border:1px solid rgba(80,255,140,0.25);
      border-radius:12px;overflow:hidden;
      box-shadow:0 8px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(80,255,140,0.08)">
-  <div class="scan-terminal-header" style="display:flex;align-items:center;gap:8px;padding:9px 14px;
+  <div class="scan-terminal-header" style="display:flex;align-items:center;gap:8px;padding:10px 16px;
        background:rgba(80,255,140,0.04);border-bottom:1px solid rgba(80,255,140,0.12)">
-    <span class="scan-terminal-dot" style="background:#f87171;width:10px;height:10px;border-radius:50%;display:inline-block"></span>
-    <span class="scan-terminal-dot" style="background:#fbbf24;width:10px;height:10px;border-radius:50%;display:inline-block"></span>
-    <span class="scan-terminal-dot" style="background:#4ade80;width:10px;height:10px;border-radius:50%;display:inline-block"></span>
-    <span style="font-family:'Space Grotesk',sans-serif;font-size:0.70rem;letter-spacing:2px;
-                 color:rgba(120,200,140,0.7);margin-left:4px">ATLAS // DEEP SCAN TERMINAL</span>
+    <span class="scan-terminal-dot" style="background:#f87171;width:11px;height:11px;border-radius:50%;display:inline-block"></span>
+    <span class="scan-terminal-dot" style="background:#fbbf24;width:11px;height:11px;border-radius:50%;display:inline-block"></span>
+    <span class="scan-terminal-dot" style="background:#4ade80;width:11px;height:11px;border-radius:50%;display:inline-block"></span>
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:0.72rem;letter-spacing:2px;
+                 color:rgba(120,200,140,0.7);margin-left:6px">ATLAS // DEEP SCAN TERMINAL</span>
     <span id="scanTermStatus" style="margin-left:auto;font-size:0.65rem;color:#4ade80;
           font-family:'Space Grotesk',sans-serif;letter-spacing:1px">● ACTIVE</span>
   </div>
-  <div id="scanTermLog" style="height:160px;overflow-y:auto;padding:10px 14px;
-       font-family:'Courier New',monospace;font-size:0.72rem;line-height:1.7;
+  <div id="scanTermLog" style="height:230px;overflow-y:auto;padding:12px 16px;
+       font-family:'Courier New',monospace;font-size:0.74rem;line-height:1.75;
        color:rgba(140,255,160,0.75)"></div>
 </div>
+
+<!-- Laika orbit around terminal during scan -->
+<style>
+@keyframes laikaOrbit {
+  from { transform: rotate(0deg) translateX(440px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(440px) rotate(-360deg); }
+}
+@keyframes laikaOrbitFast {
+  from { transform: rotate(0deg) translateX(440px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(440px) rotate(-360deg); }
+}
+@keyframes laikaPlanetFound {
+  0%,100% { font-size:2.2rem; filter:none; transform: rotate(0deg) translateX(440px) rotate(0deg); }
+  30%     { font-size:3.4rem; filter:drop-shadow(0 0 18px gold) drop-shadow(0 0 8px #fff); }
+  60%     { font-size:3.0rem; filter:drop-shadow(0 0 12px #4ade80); }
+}
+#laikaOrbitContainer { position:fixed; left:50%; transform:translateX(-50%); bottom:165px; width:0; height:0; pointer-events:none; z-index:9000; display:none; }
+#laikaOrbitDog { position:absolute; font-size:2.2rem; animation: laikaOrbit 3.8s linear infinite; will-change:transform; }
+#laikaOrbitDog.planet-found { animation: laikaPlanetFound 0.6s ease-in-out 3 !important; }
+/* Achievement banner */
+#achievementContainer { position:fixed; top:80px; left:50%; transform:translateX(-50%); z-index:9100; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:8px; }
+.achievement-banner { background:linear-gradient(135deg,rgba(20,12,50,0.97),rgba(30,20,70,0.97)); border:1px solid rgba(250,200,50,0.5); border-radius:12px; padding:12px 24px; display:flex; align-items:center; gap:12px; box-shadow:0 4px 30px rgba(250,200,50,0.2); opacity:0; transform:translateY(-16px) scale(0.92); transition:opacity 0.35s,transform 0.35s; min-width:260px; }
+.achievement-banner.show { opacity:1; transform:translateY(0) scale(1); }
+.achievement-banner .ach-icon { font-size:1.6rem; }
+.achievement-banner .ach-text { font-family:'Space Grotesk',sans-serif; font-size:0.82rem; color:#facc15; letter-spacing:0.5px; }
+.achievement-banner .ach-label { font-size:0.65rem; color:rgba(250,200,50,0.55); text-transform:uppercase; letter-spacing:1.5px; }
+</style>
+<div id="laikaOrbitContainer"><div id="laikaOrbitDog">🐕</div></div>
+<div id="achievementContainer"></div>
 {% endblock %}
 
 {% block scripts %}
@@ -1255,10 +1284,35 @@ function showTerminal(star) {
   t.style.display = 'block';
   document.getElementById('scanTermStatus').textContent = '● ACTIVE';
   document.getElementById('scanTermStatus').style.color = '#4ade80';
+  // Start Laika orbit
+  const orb = document.getElementById('laikaOrbitContainer');
+  if (orb) { orb.style.display = 'block'; document.getElementById('laikaOrbitDog').textContent = '🐕'; }
 }
 function hideTerminal() {
   const t = document.getElementById('scanTerminal');
   if (t) setTimeout(() => { t.style.display = 'none'; }, 3000);
+  const orb = document.getElementById('laikaOrbitContainer');
+  if (orb) setTimeout(() => { orb.style.display = 'none'; }, 3200);
+}
+function laikaExcited() {
+  const dog = document.getElementById('laikaOrbitDog');
+  if (!dog) return;
+  dog.textContent = '🐕✨';
+  dog.classList.add('planet-found');
+  setTimeout(() => { dog.classList.remove('planet-found'); dog.textContent = '🐕'; }, 1800);
+}
+function showAchievement(text) {
+  const container = document.getElementById('achievementContainer');
+  if (!container) return;
+  const banner = document.createElement('div');
+  banner.className = 'achievement-banner';
+  banner.innerHTML = `<span class="ach-icon">🏆</span><div><div class="ach-label">Achievement Unlocked</div><div class="ach-text">${text.replace(/_/g,' ')}</div></div>`;
+  container.appendChild(banner);
+  requestAnimationFrame(() => banner.classList.add('show'));
+  setTimeout(() => {
+    banner.classList.remove('show');
+    banner.addEventListener('transitionend', () => banner.remove(), { once: true });
+  }, 3000);
 }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -1361,6 +1415,7 @@ async function scanStar(starName) {
   termLog(_kz ? `✓ Деректер алынды — <b>${pl.length} планета</b> табылды` : `✓ Data acquired — <b>${pl.length} planet(s)</b> catalogued`, 'success');
   await sleep(200);
   if (habCount > 0) {
+    laikaExcited();
     termLog(_kz ? `🌱 <b>${habCount}</b> планета тіршілік аймағында — одан әрі талдауға лайықты!` : `🌱 <b>${habCount}</b> planet(s) in habitable zone — flagged for analysis!`, 'success');
     await sleep(200);
   }
@@ -1385,17 +1440,17 @@ async function scanStar(starName) {
   updateStarList();
   updateHeaderStats(data.stats || {});
   addLogEntry(name, pl.length, bestScore);
-  showToast(_kz ? 'Сканерлеу аяқталды!' : 'Scan Complete!', `${pl.length} ${_kz ? 'планета табылды' : 'planets found'} · Best: ${bestScore}/100`, 'success');
-  data.new_achievements?.forEach(ach => {
-    setTimeout(() => showToast('🏆 Achievement!', ach.replace(/_/g,' '), 'info'), 1000);
+  data.new_achievements?.forEach((ach, i) => {
+    setTimeout(() => showAchievement(ach), 600 + i * 800);
   });
 
   await sleep(800);
   hideTerminal();
   if (!_autoScanMode) {
     if (window._atlasSave) await window._atlasSave();
-    renderSystemViewFromData(data.star, data.planets, data.hostname);
     switchTab('system');
+    await sleep(80);
+    renderSystemViewFromData(data.star, data.planets, data.hostname);
   } else {
     _autoDone++;
     _autoFound += pl.length;
@@ -1524,9 +1579,8 @@ async function loadSystem(hostname) {
   });
   const data = await res.json();
   if (data.success) {
-    showToast('success', 'System Loaded', hostname);
-    renderSystemViewFromData(data.star, data.planets, hostname);
     switchTab('system');
+    setTimeout(() => renderSystemViewFromData(data.star, data.planets, hostname), 80);
   }
 }
 
@@ -1589,7 +1643,7 @@ function renderSystemViewFromData(star, planets, hostname) {
     </div>
     <div id="planetDetail">${buildPlanetDetailHtml(sel, 0)}</div>`;
 
-  loadSystemChart(0);
+  setTimeout(() => loadSystemChart(0), 80);
   // Trigger AI report for first planet
   fetch('/api/select-planet', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({index:0})})
     .then(r=>r.json()).then(d=>{if(d.planet) setTimeout(()=>fetchAIPlanetReport(d.planet),400);}).catch(()=>{});

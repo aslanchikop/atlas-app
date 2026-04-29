@@ -23,6 +23,7 @@ GEMINI_MODELS = [
     'gemini-2.5-flash',
 ]
 _gemini_client = _genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+print(f'[Gemini] key set: {bool(GEMINI_API_KEY)}, client: {_gemini_client is not None}', flush=True)
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -1327,12 +1328,11 @@ def call_gemini(contents, system_text, max_tokens=350):
     if cache_key in _gemini_cache:
         return _gemini_cache[cache_key]
 
-    # Конвертируем формат contents в SDK-формат
-    sdk_contents = []
-    for c in contents:
-        role = 'user' if c['role'] == 'user' else 'model'
-        text = c['parts'][0]['text']
-        sdk_contents.append(_genai.types.Content(role=role, parts=[_genai.types.Part(text=text)]))
+    sdk_contents = [
+        {'role': 'user' if c['role'] == 'user' else 'model',
+         'parts': [{'text': c['parts'][0]['text']}]}
+        for c in contents
+    ]
 
     config = _genai.types.GenerateContentConfig(
         system_instruction=system_text,
