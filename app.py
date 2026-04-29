@@ -15,13 +15,12 @@ app.secret_key = 'atlas-v21-key-2025'
 # ── Google Gemini ─────────────────────────────────────────────────────────────
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 GEMINI_MODELS = [
+    'gemini-3-flash-preview',
     'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-2.0-flash-lite',
-    'gemini-3-flash-preview',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
-GEMINI_URL = GEMINI_BASE + GEMINI_MODELS[0] + ':generateContent?key=' + GEMINI_API_KEY
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -1334,9 +1333,10 @@ def call_gemini(contents, system_text, max_tokens=350):
     }
 
     for model in GEMINI_MODELS:
-        url = GEMINI_BASE + model + ':generateContent?key=' + GEMINI_API_KEY
+        url = GEMINI_BASE + model + ':generateContent'
+        headers = {'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY}
         try:
-            resp = requests.post(url, json=body, timeout=15)
+            resp = requests.post(url, json=body, headers=headers, timeout=15)
             if resp.ok:
                 text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
                 _gemini_cache[cache_key] = text
