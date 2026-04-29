@@ -9,8 +9,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
-from google import genai as _genai
-
 app = Flask(__name__)
 app.secret_key = 'atlas-v21-key-2025'
 
@@ -22,8 +20,8 @@ GEMINI_MODELS = [
     'gemini-2.0-flash-lite',
     'gemini-2.5-flash',
 ]
-_gemini_client = _genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-print(f'[Gemini] key set: {bool(GEMINI_API_KEY)}, client: {_gemini_client is not None}', flush=True)
+GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
+print(f'[Gemini] key set: {bool(GEMINI_API_KEY)}', flush=True)
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -107,21 +105,22 @@ def api_logout():
 
 @app.route('/api/gemini-test')
 def api_gemini_test():
-    result = {'key_set': bool(GEMINI_API_KEY), 'client': _gemini_client is not None}
-    if _gemini_client:
-        for model in GEMINI_MODELS:
-            try:
-                resp = _gemini_client.models.generate_content(
-                    model=model,
-                    contents=[{'role':'user','parts':[{'text':'Say OK'}]}],
-                    config=_genai.types.GenerateContentConfig(max_output_tokens=10)
-                )
+    result = {'key_set': bool(GEMINI_API_KEY)}
+    headers = {'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY}
+    body = {'contents': [{'role': 'user', 'parts': [{'text': 'Say OK'}]}],
+            'generationConfig': {'maxOutputTokens': 10}}
+    for model in GEMINI_MODELS:
+        url = GEMINI_BASE + model + ':generateContent'
+        try:
+            r = requests.post(url, json=body, headers=headers, timeout=15)
+            if r.ok:
                 result['ok'] = True
                 result['model'] = model
-                result['response'] = resp.text.strip()
+                result['response'] = r.json()['candidates'][0]['content']['parts'][0]['text'].strip()
                 break
-            except Exception as e:
-                result.setdefault('errors', {})[model] = str(e)[:200]
+            result.setdefault('errors', {})[model] = f'{r.status_code}: {r.text[:200]}'
+        except Exception as e:
+            result.setdefault('errors', {})[model] = str(e)[:200]
     return jsonify(result)
 
 @app.route('/api/discover', methods=['POST'])
@@ -1198,13 +1197,19 @@ def build_system_data(planets, star, selected_idx=0):
         })
     max_orbit = max((p.get('orbit', 1) for p in planets), default=2)
     ax_range = max_orbit * 1.5
+    axis_hidden = {
+        'visible': False, 'showticklabels': False, 'showgrid': False,
+        'zeroline': False, 'showbackground': False, 'showaxeslabels': False,
+        'showspikes': False, 'title': {'text': ''}
+    }
     layout = {
         'scene': {
-            'xaxis': {'range': [-ax_range, ax_range], 'showticklabels': False, 'showgrid': False, 'zeroline': False, 'showbackground': False},
-            'yaxis': {'range': [-ax_range, ax_range], 'showticklabels': False, 'showgrid': False, 'zeroline': False, 'showbackground': False},
-            'zaxis': {'range': [-ax_range/3, ax_range/3], 'showticklabels': False, 'showgrid': False, 'zeroline': False, 'showbackground': False},
+            'xaxis': dict(axis_hidden, range=[-ax_range, ax_range]),
+            'yaxis': dict(axis_hidden, range=[-ax_range, ax_range]),
+            'zaxis': dict(axis_hidden, range=[-ax_range/3, ax_range/3]),
             'bgcolor': 'rgba(0,0,0,0)',
-            'camera': {'eye': {'x': 0.5, 'y': 1.5, 'z': 0.8}}
+            'camera': {'eye': {'x': 0, 'y': 0.1, 'z': 2.2}},
+            'dragmode': 'orbit',
         },
         'paper_bgcolor': 'rgba(0,0,0,0)', 'plot_bgcolor': 'rgba(0,0,0,0)',
         'showlegend': False, 'margin': {'l': 0, 'r': 0, 't': 0, 'b': 0}, 'height': 400
@@ -1338,8 +1343,8 @@ KEYWORD_RESPONSES = {
 _gemini_cache = {}
 
 def call_gemini(contents, system_text, max_tokens=350):
-    """Пробует модели по очереди через google-genai SDK."""
-    if not _gemini_client:
+    """Пробует модели по очереди через прямой HTTP запрос."""
+    if not GEMINI_API_KEY:
         return None
 
     last_msg = contents[-1]['parts'][0]['text'] if contents else ''
@@ -1347,33 +1352,33 @@ def call_gemini(contents, system_text, max_tokens=350):
     if cache_key in _gemini_cache:
         return _gemini_cache[cache_key]
 
-    sdk_contents = [
-        {'role': 'user' if c['role'] == 'user' else 'model',
-         'parts': [{'text': c['parts'][0]['text']}]}
-        for c in contents
-    ]
-
-    config = _genai.types.GenerateContentConfig(
-        system_instruction=system_text,
-        max_output_tokens=max_tokens,
-        temperature=0.7,
-        top_p=0.9,
-    )
+    body = {
+        'system_instruction': {'parts': [{'text': system_text}]},
+        'contents': [
+            {'role': 'user' if c['role'] == 'user' else 'model',
+             'parts': [{'text': c['parts'][0]['text']}]}
+            for c in contents
+        ],
+        'generationConfig': {
+            'maxOutputTokens': max_tokens,
+            'temperature': 0.7,
+            'topP': 0.9,
+        }
+    }
+    headers = {'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY}
 
     for model in GEMINI_MODELS:
+        url = GEMINI_BASE + model + ':generateContent'
         try:
-            resp = _gemini_client.models.generate_content(
-                model=model,
-                contents=sdk_contents,
-                config=config,
-            )
-            text = resp.text.strip()
-            _gemini_cache[cache_key] = text
-            print(f'[Gemini] OK via {model}')
-            return text
+            resp = requests.post(url, json=body, headers=headers, timeout=20)
+            if resp.ok:
+                text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+                _gemini_cache[cache_key] = text
+                print(f'[Gemini] OK via {model}', flush=True)
+                return text
+            print(f'[Gemini] {model} → {resp.status_code}: {resp.text[:150]}', flush=True)
         except Exception as e:
-            print(f'[Gemini] {model} → {e}')
-            continue
+            print(f'[Gemini] {model} → {e}', flush=True)
 
     return None
 
