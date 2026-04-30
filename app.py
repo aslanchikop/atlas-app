@@ -9,26 +9,19 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
-from google import genai as _genai
-
 app = Flask(__name__)
 app.secret_key = 'atlas-v21-key-2025'
 
-# ── Google Gemini (official SDK) ──────────────────────────────────────────────
+# ── Google Gemini (HTTP, без внешних SDK) ─────────────────────────────────────
 GEMINI_MODELS = [
     'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
     'gemini-flash-latest',
     'gemini-2.5-flash',
 ]
+GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
 _GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
-print(f'[Gemini] key present: {bool(_GEMINI_KEY)}, len={len(_GEMINI_KEY)}', flush=True)
-try:
-    _gemini_client = _genai.Client(api_key=_GEMINI_KEY) if _GEMINI_KEY else None
-    print(f'[Gemini] client: {_gemini_client is not None}', flush=True)
-except Exception as _e:
-    _gemini_client = None
-    print(f'[Gemini] client error: {_e}', flush=True)
+print(f'[Gemini] key present={bool(_GEMINI_KEY)} len={len(_GEMINI_KEY)}', flush=True)
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -112,25 +105,23 @@ def api_logout():
 
 @app.route('/api/gemini-test')
 def api_gemini_test():
-    result = {
-        'key_present': bool(_GEMINI_KEY),
-        'key_len': len(_GEMINI_KEY),
-        'client': _gemini_client is not None,
-        'models': GEMINI_MODELS,
-    }
-    if not _gemini_client:
+    result = {'key_present': bool(_GEMINI_KEY), 'key_len': len(_GEMINI_KEY), 'models': GEMINI_MODELS}
+    if not _GEMINI_KEY:
         return jsonify(result)
+    hdrs = {'Content-Type': 'application/json', 'x-goog-api-key': _GEMINI_KEY}
+    body = {'contents': [{'role': 'user', 'parts': [{'text': 'Say OK'}]}]}
     for model in GEMINI_MODELS:
+        url = GEMINI_BASE + model + ':generateContent'
         try:
-            resp = _gemini_client.models.generate_content(
-                model=model, contents='Say OK'
-            )
-            result['ok'] = True
-            result['working_model'] = model
-            result['response'] = resp.text.strip()
-            break
+            r = requests.post(url, json=body, headers=hdrs, timeout=15)
+            if r.ok:
+                result['ok'] = True
+                result['working_model'] = model
+                result['response'] = r.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+                break
+            result.setdefault('errors', {})[model] = f'{r.status_code}: {r.text[:200]}'
         except Exception as e:
-            result.setdefault('errors', {})[model] = str(e)[:300]
+            result.setdefault('errors', {})[model] = str(e)[:200]
     return jsonify(result)
 
 @app.route('/api/discover', methods=['POST'])
@@ -1353,8 +1344,8 @@ KEYWORD_RESPONSES = {
 _gemini_cache = {}
 
 def call_gemini(contents, system_text, max_tokens=350):
-    """Пробует модели по очереди через google-genai SDK (официальная документация)."""
-    if not _gemini_client:
+    """HTTP запрос к Gemini API, без внешних SDK."""
+    if not _GEMINI_KEY:
         return None
 
     last_msg = contents[-1]['parts'][0]['text'] if contents else ''
@@ -1362,27 +1353,27 @@ def call_gemini(contents, system_text, max_tokens=350):
     if cache_key in _gemini_cache:
         return _gemini_cache[cache_key]
 
-    sdk_contents = [
-        {'role': 'user' if c['role'] == 'user' else 'model',
-         'parts': [{'text': c['parts'][0]['text']}]}
-        for c in contents
-    ]
-    config = _genai.types.GenerateContentConfig(
-        system_instruction=system_text,
-        max_output_tokens=max_tokens,
-        temperature=0.7,
-        top_p=0.9,
-    )
+    body = {
+        'system_instruction': {'parts': [{'text': system_text}]},
+        'contents': [
+            {'role': 'user' if c['role'] == 'user' else 'model',
+             'parts': [{'text': c['parts'][0]['text']}]}
+            for c in contents
+        ],
+        'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7, 'topP': 0.9}
+    }
+    hdrs = {'Content-Type': 'application/json', 'x-goog-api-key': _GEMINI_KEY}
 
     for model in GEMINI_MODELS:
+        url = GEMINI_BASE + model + ':generateContent'
         try:
-            resp = _gemini_client.models.generate_content(
-                model=model, contents=sdk_contents, config=config
-            )
-            text = resp.text.strip()
-            _gemini_cache[cache_key] = text
-            print(f'[Gemini] OK via {model}', flush=True)
-            return text
+            r = requests.post(url, json=body, headers=hdrs, timeout=20)
+            if r.ok:
+                text = r.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+                _gemini_cache[cache_key] = text
+                print(f'[Gemini] OK via {model}', flush=True)
+                return text
+            print(f'[Gemini] {model} → {r.status_code}: {r.text[:150]}', flush=True)
         except Exception as e:
             print(f'[Gemini] {model} → {e}', flush=True)
 
@@ -1420,7 +1411,7 @@ def get_chat_response(message, lang='en', history=None, laika=False):
                 return response, 'keyword'
 
     # 2) Gemini — строим контекст из последних 4 сообщений + текущее
-    if _gemini_client:
+    if _GEMINI_KEY:
         lang_note = 'Отвечай на казахском.' if lang == 'kz' else 'Reply in English.'
         if laika:
             system = LAIKA_SYSTEM.get(lang, LAIKA_SYSTEM['en'])
@@ -1941,7 +1932,7 @@ def api_ai_analysis():
         f"Top 5:\n{data_lines}"
     )
 
-    if _gemini_client:
+    if _GEMINI_KEY:
         lang_note = 'Жауапты қазақ тілінде жаз.' if lang == 'kz' else 'Write in English.'
         system = (
             'You are ATLAS — Autonomous Terrestrial Life Analysis System. '
