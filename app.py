@@ -14,16 +14,18 @@ from google import genai as _genai
 app = Flask(__name__)
 app.secret_key = 'atlas-v21-key-2025'
 
-# ── Google Gemini (official SDK, reads GEMINI_API_KEY from env) ───────────────
+# ── Google Gemini (official SDK) ──────────────────────────────────────────────
 GEMINI_MODELS = [
+    'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
     'gemini-flash-latest',
     'gemini-2.5-flash',
-    'gemini-2.0-flash-lite',
 ]
+_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
+print(f'[Gemini] key present: {bool(_GEMINI_KEY)}, len={len(_GEMINI_KEY)}', flush=True)
 try:
-    _gemini_client = _genai.Client()
-    print('[Gemini] client created OK', flush=True)
+    _gemini_client = _genai.Client(api_key=_GEMINI_KEY) if _GEMINI_KEY else None
+    print(f'[Gemini] client: {_gemini_client is not None}', flush=True)
 except Exception as _e:
     _gemini_client = None
     print(f'[Gemini] client error: {_e}', flush=True)
@@ -110,21 +112,25 @@ def api_logout():
 
 @app.route('/api/gemini-test')
 def api_gemini_test():
-    result = {'client': _gemini_client is not None}
+    result = {
+        'key_present': bool(_GEMINI_KEY),
+        'key_len': len(_GEMINI_KEY),
+        'client': _gemini_client is not None,
+        'models': GEMINI_MODELS,
+    }
     if not _gemini_client:
         return jsonify(result)
     for model in GEMINI_MODELS:
         try:
             resp = _gemini_client.models.generate_content(
-                model=model,
-                contents='Say OK in one word',
+                model=model, contents='Say OK'
             )
             result['ok'] = True
-            result['model'] = model
+            result['working_model'] = model
             result['response'] = resp.text.strip()
             break
         except Exception as e:
-            result.setdefault('errors', {})[model] = str(e)[:200]
+            result.setdefault('errors', {})[model] = str(e)[:300]
     return jsonify(result)
 
 @app.route('/api/discover', methods=['POST'])
