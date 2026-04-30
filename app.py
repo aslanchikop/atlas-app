@@ -14,10 +14,12 @@ app.secret_key = 'atlas-v21-key-2025'
 
 # ── Google Gemini (HTTP, без внешних SDK) ─────────────────────────────────────
 GEMINI_MODELS = [
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-flash',
     'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
     'gemini-flash-latest',
-    'gemini-2.5-flash',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
 _GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
@@ -108,12 +110,11 @@ def api_gemini_test():
     result = {'key_present': bool(_GEMINI_KEY), 'key_len': len(_GEMINI_KEY), 'models': GEMINI_MODELS}
     if not _GEMINI_KEY:
         return jsonify(result)
-    hdrs = {'Content-Type': 'application/json', 'x-goog-api-key': _GEMINI_KEY}
     body = {'contents': [{'role': 'user', 'parts': [{'text': 'Say OK'}]}]}
     for model in GEMINI_MODELS:
-        url = GEMINI_BASE + model + ':generateContent'
+        url = GEMINI_BASE + model + f':generateContent?key={_GEMINI_KEY}'
         try:
-            r = requests.post(url, json=body, headers=hdrs, timeout=15)
+            r = requests.post(url, json=body, headers={'Content-Type': 'application/json'}, timeout=15)
             if r.ok:
                 result['ok'] = True
                 result['working_model'] = model
@@ -1362,12 +1363,10 @@ def call_gemini(contents, system_text, max_tokens=350):
         ],
         'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7, 'topP': 0.9}
     }
-    hdrs = {'Content-Type': 'application/json', 'x-goog-api-key': _GEMINI_KEY}
-
     for model in GEMINI_MODELS:
-        url = GEMINI_BASE + model + ':generateContent'
+        url = GEMINI_BASE + model + f':generateContent?key={_GEMINI_KEY}'
         try:
-            r = requests.post(url, json=body, headers=hdrs, timeout=20)
+            r = requests.post(url, json=body, headers={'Content-Type': 'application/json'}, timeout=20)
             if r.ok:
                 text = r.json()['candidates'][0]['content']['parts'][0]['text'].strip()
                 _gemini_cache[cache_key] = text
