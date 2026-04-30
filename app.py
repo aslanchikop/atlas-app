@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'atlas-v21-key-2025'
 
 # ── Google Gemini ─────────────────────────────────────────────────────────────
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') or 'AIzaSyDLZ134QNl3S-0A-yFqtZeVoHNSaMWawzA'
 GEMINI_MODELS = [
     'gemini-3-flash-preview',
     'gemini-flash-latest',
