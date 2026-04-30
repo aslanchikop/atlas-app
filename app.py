@@ -14,12 +14,9 @@ app.secret_key = 'atlas-v21-key-2025'
 
 # ── Google Gemini (HTTP, без внешних SDK) ─────────────────────────────────────
 GEMINI_MODELS = [
+    'gemini-3-flash-preview',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
-    'gemini-2.5-flash',
-    'gemini-3.1-pro-preview',
-    'gemini-3-flash-preview',
-    'gemini-flash-latest',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
 _GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
