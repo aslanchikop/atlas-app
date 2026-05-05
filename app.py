@@ -1445,13 +1445,7 @@ LAIKA_SYSTEM = {
 def get_chat_response(message, lang='en', history=None, laika=False):
     msg_lower = message.lower()
 
-    if not laika:
-        # 1) Keyword shortcuts — 0 токенов
-        for keywords, response in KEYWORD_RESPONSES.items():
-            if any(kw in msg_lower for kw in keywords):
-                return response, 'keyword'
-
-    # 2) Gemini — строим контекст из последних 4 сообщений + текущее
+    # Gemini first. Keyword answers are only a fallback when the API is unavailable.
     if _GEMINI_KEY:
         lang_note = 'Отвечай на казахском.' if lang == 'kz' else 'Reply in English.'
         if laika:
@@ -1488,7 +1482,12 @@ def get_chat_response(message, lang='en', history=None, laika=False):
         if result:
             return result, 'gemini'
 
-    # 3) Topic-aware fallback (no AI available)
+    if not laika:
+        for keywords, response in KEYWORD_RESPONSES.items():
+            if any(kw in msg_lower for kw in keywords):
+                return response, 'keyword'
+
+    # Topic-aware fallback (no AI available)
     fb = _topic_fallback(msg_lower, lang, laika)
     return fb, 'fallback'
 
