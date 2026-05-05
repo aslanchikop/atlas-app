@@ -15,12 +15,15 @@ app.secret_key = 'atlas-v21-key-2025'
 # ── Google Gemini (HTTP, без внешних SDK) ─────────────────────────────────────
 GEMINI_MODELS = [
     'gemini-3-flash-preview',
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
-_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
+_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
 print(f'[Gemini] key present={bool(_GEMINI_KEY)} len={len(_GEMINI_KEY)}', flush=True)
+_gemini_available_models = None
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -104,19 +107,25 @@ def api_logout():
 
 @app.route('/api/gemini-test')
 def api_gemini_test():
-    result = {'key_present': bool(_GEMINI_KEY), 'key_len': len(_GEMINI_KEY), 'models': GEMINI_MODELS}
+    models = get_gemini_models()
+    result = {'key_present': bool(_GEMINI_KEY), 'key_len': len(_GEMINI_KEY), 'models': models}
     if not _GEMINI_KEY:
         return jsonify(result)
     body = {'contents': [{'role': 'user', 'parts': [{'text': 'Say OK'}]}]}
-    for model in GEMINI_MODELS:
-        url = GEMINI_BASE + model + f':generateContent?key={_GEMINI_KEY}'
+    headers = {'Content-Type': 'application/json', 'x-goog-api-key': _GEMINI_KEY}
+    for model in models:
+        url = GEMINI_BASE + model + ':generateContent'
         try:
-            r = requests.post(url, json=body, headers={'Content-Type': 'application/json'}, timeout=15)
+            r = requests.post(url, json=body, headers=headers, timeout=15)
             if r.ok:
-                result['ok'] = True
-                result['working_model'] = model
-                result['response'] = r.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-                break
+                res_data = r.json()
+                if 'candidates' in res_data and res_data['candidates']:
+                    result['ok'] = True
+                    result['working_model'] = model
+                    result['response'] = res_data['candidates'][0]['content']['parts'][0]['text'].strip()
+                    break
+                else:
+                    result.setdefault('errors', {})[model] = f"No candidates: {res_data}"
             result.setdefault('errors', {})[model] = f'{r.status_code}: {r.text[:200]}'
         except Exception as e:
             result.setdefault('errors', {})[model] = str(e)[:200]
@@ -1341,9 +1350,40 @@ KEYWORD_RESPONSES = {
 
 _gemini_cache = {}
 
+def get_gemini_models():
+    """Return preferred Gemini text models, plus live API models when available."""
+    global _gemini_available_models
+    if not _GEMINI_KEY:
+        return GEMINI_MODELS
+    if _gemini_available_models is not None:
+        return _gemini_available_models
+
+    models = list(GEMINI_MODELS)
+    try:
+        r = requests.get(f'{GEMINI_BASE.rstrip("/")}?key={_GEMINI_KEY}', timeout=10)
+        if r.ok:
+            live_models = []
+            for item in r.json().get('models', []):
+                name = (item.get('name') or '').replace('models/', '')
+                methods = item.get('supportedGenerationMethods') or []
+                if name and 'generateContent' in methods:
+                    live_models.append(name)
+            for name in live_models:
+                if name not in models:
+                    models.append(name)
+            print(f'[Gemini] available generateContent models={len(live_models)}', flush=True)
+        else:
+            print(f'[Gemini] model list error {r.status_code}: {r.text[:150]}', flush=True)
+    except Exception as e:
+        print(f'[Gemini] model list failed: {e}', flush=True)
+
+    _gemini_available_models = models
+    return models
+
 def call_gemini(contents, system_text, max_tokens=350):
     """HTTP запрос к Gemini API, без внешних SDK."""
     if not _GEMINI_KEY:
+        print('[Gemini] ERROR: GEMINI_API_KEY is not set in environment!', flush=True)
         return None
 
     last_msg = contents[-1]['parts'][0]['text'] if contents else ''
@@ -1360,16 +1400,21 @@ def call_gemini(contents, system_text, max_tokens=350):
         ],
         'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7, 'topP': 0.9}
     }
-    for model in GEMINI_MODELS:
-        url = GEMINI_BASE + model + f':generateContent?key={_GEMINI_KEY}'
+    headers = {'Content-Type': 'application/json', 'x-goog-api-key': _GEMINI_KEY}
+    for model in get_gemini_models():
+        url = GEMINI_BASE + model + ':generateContent'
         try:
-            r = requests.post(url, json=body, headers={'Content-Type': 'application/json'}, timeout=20)
+            r = requests.post(url, json=body, headers=headers, timeout=20)
             if r.ok:
-                text = r.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-                _gemini_cache[cache_key] = text
-                print(f'[Gemini] OK via {model}', flush=True)
-                return text
-            print(f'[Gemini] {model} → {r.status_code}: {r.text[:150]}', flush=True)
+                res_json = r.json()
+                if 'candidates' in res_json and res_json['candidates']:
+                    cand = res_json['candidates'][0]
+                    if 'content' in cand and 'parts' in cand['content'] and cand['content']['parts']:
+                        text = cand['content']['parts'][0].get('text', '').strip()
+                        _gemini_cache[cache_key] = text
+                        print(f'[Gemini] OK via {model}', flush=True)
+                        return text
+            print(f'[Gemini] Error {model} → {r.status_code}: {r.text[:150]}', flush=True)
         except Exception as e:
             print(f'[Gemini] {model} → {e}', flush=True)
 
@@ -1788,7 +1833,7 @@ def api_analysis():
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    data    = request.get_json()
+    data    = request.get_json() or {}
     message = data.get('message', '').strip()
     lang    = data.get('lang', 'en')
     laika   = bool(data.get('laika', False))
@@ -2102,4 +2147,6 @@ if __name__ == '__main__':
     import sys
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     print("ATLAS v21 -- Starting Flask server on http://localhost:5000")
-    app.run(debug=True, port=5000, host='0.0.0.0', use_reloader=False)
+    # Railway требует привязки к порту из переменной окружения PORT
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, port=port, host='0.0.0.0', use_reloader=False)

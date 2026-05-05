@@ -2,5 +2,6 @@
 __pycache__/
 *.pyc
 *.pyo
+*.exe
 instance/
 .DS_Store
