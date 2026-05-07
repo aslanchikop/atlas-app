@@ -19,18 +19,15 @@ GEMINI_MODELS = [
     'gemini-3-flash-preview',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
-_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
-print(f'[Gemini] key present={bool(_GEMINI_KEY)} len={len(_GEMINI_KEY)}', flush=True)
 
-# Try to init google-genai SDK (GA since May 2025)
-_genai_client = None
-try:
-    from google import genai as _genai_module
-    if _GEMINI_KEY:
-        _genai_client = _genai_module.Client(api_key=_GEMINI_KEY)
-        print('[Gemini] SDK client initialized', flush=True)
-except Exception as _e:
-    print(f'[Gemini] SDK unavailable: {_e}', flush=True)
+def _get_key():
+    """Read API key fresh on every call — survives Railway env var changes."""
+    return os.environ.get('GEMINI_API_KEY', '').strip()
+
+# Log key status at startup (for Railway logs)
+_startup_key = _get_key()
+print(f'[Gemini] startup key present={bool(_startup_key)} len={len(_startup_key)}', flush=True)
+del _startup_key
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -114,13 +111,13 @@ def api_logout():
 
 @app.route('/api/gemini-test')
 def api_gemini_test():
-    result = {'key_present': bool(_GEMINI_KEY), 'key_len': len(_GEMINI_KEY),
-              'models': GEMINI_MODELS, 'sdk': bool(_genai_client)}
-    if not _GEMINI_KEY:
+    key = _get_key()
+    result = {'key_present': bool(key), 'key_len': len(key), 'models': GEMINI_MODELS}
+    if not key:
         return jsonify(result)
     body = {'contents': [{'role': 'user', 'parts': [{'text': 'Say OK'}]}]}
     for model in GEMINI_MODELS:
-        url = f'{GEMINI_BASE}{model}:generateContent?key={_GEMINI_KEY}'
+        url = f'{GEMINI_BASE}{model}:generateContent?key={key}'
         try:
             r = requests.post(url, json=body,
                               headers={'Content-Type': 'application/json'}, timeout=15)
@@ -1358,9 +1355,10 @@ KEYWORD_RESPONSES = {
 _gemini_cache = {}
 
 def call_gemini(contents, system_text, max_tokens=350):
-    """Gemini API: SDK (google-genai) first, then HTTP fallback with ?key= param."""
-    if not _GEMINI_KEY:
-        print('[Gemini] ERROR: GEMINI_API_KEY not set', flush=True)
+    """Gemini API via HTTP — ?key= URL param (per Google docs)."""
+    key = _get_key()
+    if not key:
+        print('[Gemini] ERROR: GEMINI_API_KEY not set in environment', flush=True)
         return None
 
     last_msg = contents[-1]['parts'][0]['text'] if contents else ''
@@ -1373,38 +1371,13 @@ def call_gemini(contents, system_text, max_tokens=350):
          'parts': [{'text': c['parts'][0]['text']}]}
         for c in contents
     ]
-
-    # 1) google-genai SDK (official, GA May 2025)
-    if _genai_client:
-        try:
-            from google.genai import types as _gt
-            cfg = _gt.GenerateContentConfig(
-                system_instruction=system_text,
-                max_output_tokens=max_tokens,
-                temperature=0.7,
-                top_p=0.9,
-            )
-            for model in GEMINI_MODELS:
-                try:
-                    resp = _genai_client.models.generate_content(
-                        model=model, contents=msgs, config=cfg)
-                    text = resp.text.strip()
-                    _gemini_cache[cache_key] = text
-                    print(f'[Gemini SDK] OK via {model}', flush=True)
-                    return text
-                except Exception as e:
-                    print(f'[Gemini SDK] {model} → {e}', flush=True)
-        except Exception as e:
-            print(f'[Gemini SDK] error: {e}', flush=True)
-
-    # 2) HTTP fallback — ?key= URL param (documented method)
     body = {
         'system_instruction': {'parts': [{'text': system_text}]},
         'contents': msgs,
         'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7, 'topP': 0.9}
     }
     for model in GEMINI_MODELS:
-        url = f'{GEMINI_BASE}{model}:generateContent?key={_GEMINI_KEY}'
+        url = f'{GEMINI_BASE}{model}:generateContent?key={key}'
         try:
             r = requests.post(url, json=body,
                               headers={'Content-Type': 'application/json'}, timeout=20)
@@ -1413,11 +1386,11 @@ def call_gemini(contents, system_text, max_tokens=350):
                 if cands:
                     text = cands[0]['content']['parts'][0].get('text', '').strip()
                     _gemini_cache[cache_key] = text
-                    print(f'[Gemini HTTP] OK via {model}', flush=True)
+                    print(f'[Gemini] OK via {model}', flush=True)
                     return text
-            print(f'[Gemini HTTP] {model} → {r.status_code}: {r.text[:150]}', flush=True)
+            print(f'[Gemini] {model} → {r.status_code}: {r.text[:200]}', flush=True)
         except Exception as e:
-            print(f'[Gemini HTTP] {model} → {e}', flush=True)
+            print(f'[Gemini] {model} → {e}', flush=True)
 
     return None
 
@@ -1447,7 +1420,7 @@ def get_chat_response(message, lang='en', history=None, laika=False):
     msg_lower = message.lower()
 
     # Gemini first. Keyword answers are only a fallback when the API is unavailable.
-    if _GEMINI_KEY:
+    if _get_key():
         lang_note = 'Отвечай на казахском.' if lang == 'kz' else 'Reply in English.'
         if laika:
             system = LAIKA_SYSTEM.get(lang, LAIKA_SYSTEM['en'])
@@ -1973,7 +1946,7 @@ def api_ai_analysis():
         f"Top 5:\n{data_lines}"
     )
 
-    if _GEMINI_KEY:
+    if _get_key():
         lang_note = 'Жауапты қазақ тілінде жаз.' if lang == 'kz' else 'Write in English.'
         system = (
             'You are ATLAS — Autonomous Terrestrial Life Analysis System. '
