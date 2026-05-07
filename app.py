@@ -12,18 +12,25 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = 'atlas-v21-key-2025'
 
-# ── Google Gemini (HTTP, без внешних SDK) ─────────────────────────────────────
+# ── Google Gemini ─────────────────────────────────────────────────────────────
 GEMINI_MODELS = [
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
+    'gemini-3-flash-preview',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
 _GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '').strip()
 print(f'[Gemini] key present={bool(_GEMINI_KEY)} len={len(_GEMINI_KEY)}', flush=True)
-_gemini_available_models = None
+
+# Try to init google-genai SDK (GA since May 2025)
+_genai_client = None
+try:
+    from google import genai as _genai_module
+    if _GEMINI_KEY:
+        _genai_client = _genai_module.Client(api_key=_GEMINI_KEY)
+        print('[Gemini] SDK client initialized', flush=True)
+except Exception as _e:
+    print(f'[Gemini] SDK unavailable: {_e}', flush=True)
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -107,26 +114,26 @@ def api_logout():
 
 @app.route('/api/gemini-test')
 def api_gemini_test():
-    models = get_gemini_models()
-    result = {'key_present': bool(_GEMINI_KEY), 'key_len': len(_GEMINI_KEY), 'models': models}
+    result = {'key_present': bool(_GEMINI_KEY), 'key_len': len(_GEMINI_KEY),
+              'models': GEMINI_MODELS, 'sdk': bool(_genai_client)}
     if not _GEMINI_KEY:
         return jsonify(result)
     body = {'contents': [{'role': 'user', 'parts': [{'text': 'Say OK'}]}]}
-    headers = {'Content-Type': 'application/json', 'x-goog-api-key': _GEMINI_KEY}
-    for model in models:
-        url = GEMINI_BASE + model + ':generateContent'
+    for model in GEMINI_MODELS:
+        url = f'{GEMINI_BASE}{model}:generateContent?key={_GEMINI_KEY}'
         try:
-            r = requests.post(url, json=body, headers=headers, timeout=15)
+            r = requests.post(url, json=body,
+                              headers={'Content-Type': 'application/json'}, timeout=15)
             if r.ok:
-                res_data = r.json()
-                if 'candidates' in res_data and res_data['candidates']:
+                cands = r.json().get('candidates', [])
+                if cands:
                     result['ok'] = True
                     result['working_model'] = model
-                    result['response'] = res_data['candidates'][0]['content']['parts'][0]['text'].strip()
+                    result['response'] = cands[0]['content']['parts'][0]['text'].strip()
                     break
-                else:
-                    result.setdefault('errors', {})[model] = f"No candidates: {res_data}"
-            result.setdefault('errors', {})[model] = f'{r.status_code}: {r.text[:200]}'
+                result.setdefault('errors', {})[model] = f'no candidates: {r.json()}'
+            else:
+                result.setdefault('errors', {})[model] = f'{r.status_code}: {r.text[:200]}'
         except Exception as e:
             result.setdefault('errors', {})[model] = str(e)[:200]
     return jsonify(result)
@@ -1350,40 +1357,10 @@ KEYWORD_RESPONSES = {
 
 _gemini_cache = {}
 
-def get_gemini_models():
-    """Return preferred Gemini text models, plus live API models when available."""
-    global _gemini_available_models
-    if not _GEMINI_KEY:
-        return GEMINI_MODELS
-    if _gemini_available_models is not None:
-        return _gemini_available_models
-
-    models = list(GEMINI_MODELS)
-    try:
-        r = requests.get(f'{GEMINI_BASE.rstrip("/")}?key={_GEMINI_KEY}', timeout=10)
-        if r.ok:
-            live_models = []
-            for item in r.json().get('models', []):
-                name = (item.get('name') or '').replace('models/', '')
-                methods = item.get('supportedGenerationMethods') or []
-                if name and 'generateContent' in methods:
-                    live_models.append(name)
-            for name in live_models:
-                if name not in models:
-                    models.append(name)
-            print(f'[Gemini] available generateContent models={len(live_models)}', flush=True)
-        else:
-            print(f'[Gemini] model list error {r.status_code}: {r.text[:150]}', flush=True)
-    except Exception as e:
-        print(f'[Gemini] model list failed: {e}', flush=True)
-
-    _gemini_available_models = models
-    return models
-
 def call_gemini(contents, system_text, max_tokens=350):
-    """HTTP запрос к Gemini API, без внешних SDK."""
+    """Gemini API: SDK (google-genai) first, then HTTP fallback with ?key= param."""
     if not _GEMINI_KEY:
-        print('[Gemini] ERROR: GEMINI_API_KEY is not set in environment!', flush=True)
+        print('[Gemini] ERROR: GEMINI_API_KEY not set', flush=True)
         return None
 
     last_msg = contents[-1]['parts'][0]['text'] if contents else ''
@@ -1391,32 +1368,56 @@ def call_gemini(contents, system_text, max_tokens=350):
     if cache_key in _gemini_cache:
         return _gemini_cache[cache_key]
 
+    msgs = [
+        {'role': 'user' if c['role'] == 'user' else 'model',
+         'parts': [{'text': c['parts'][0]['text']}]}
+        for c in contents
+    ]
+
+    # 1) google-genai SDK (official, GA May 2025)
+    if _genai_client:
+        try:
+            from google.genai import types as _gt
+            cfg = _gt.GenerateContentConfig(
+                system_instruction=system_text,
+                max_output_tokens=max_tokens,
+                temperature=0.7,
+                top_p=0.9,
+            )
+            for model in GEMINI_MODELS:
+                try:
+                    resp = _genai_client.models.generate_content(
+                        model=model, contents=msgs, config=cfg)
+                    text = resp.text.strip()
+                    _gemini_cache[cache_key] = text
+                    print(f'[Gemini SDK] OK via {model}', flush=True)
+                    return text
+                except Exception as e:
+                    print(f'[Gemini SDK] {model} → {e}', flush=True)
+        except Exception as e:
+            print(f'[Gemini SDK] error: {e}', flush=True)
+
+    # 2) HTTP fallback — ?key= URL param (documented method)
     body = {
         'system_instruction': {'parts': [{'text': system_text}]},
-        'contents': [
-            {'role': 'user' if c['role'] == 'user' else 'model',
-             'parts': [{'text': c['parts'][0]['text']}]}
-            for c in contents
-        ],
+        'contents': msgs,
         'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7, 'topP': 0.9}
     }
-    headers = {'Content-Type': 'application/json', 'x-goog-api-key': _GEMINI_KEY}
-    for model in get_gemini_models():
-        url = GEMINI_BASE + model + ':generateContent'
+    for model in GEMINI_MODELS:
+        url = f'{GEMINI_BASE}{model}:generateContent?key={_GEMINI_KEY}'
         try:
-            r = requests.post(url, json=body, headers=headers, timeout=20)
+            r = requests.post(url, json=body,
+                              headers={'Content-Type': 'application/json'}, timeout=20)
             if r.ok:
-                res_json = r.json()
-                if 'candidates' in res_json and res_json['candidates']:
-                    cand = res_json['candidates'][0]
-                    if 'content' in cand and 'parts' in cand['content'] and cand['content']['parts']:
-                        text = cand['content']['parts'][0].get('text', '').strip()
-                        _gemini_cache[cache_key] = text
-                        print(f'[Gemini] OK via {model}', flush=True)
-                        return text
-            print(f'[Gemini] Error {model} → {r.status_code}: {r.text[:150]}', flush=True)
+                cands = r.json().get('candidates', [])
+                if cands:
+                    text = cands[0]['content']['parts'][0].get('text', '').strip()
+                    _gemini_cache[cache_key] = text
+                    print(f'[Gemini HTTP] OK via {model}', flush=True)
+                    return text
+            print(f'[Gemini HTTP] {model} → {r.status_code}: {r.text[:150]}', flush=True)
         except Exception as e:
-            print(f'[Gemini] {model} → {e}', flush=True)
+            print(f'[Gemini HTTP] {model} → {e}', flush=True)
 
     return None
 
