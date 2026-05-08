@@ -1135,61 +1135,70 @@ def build_starmap_data(systems):
     return {'data': traces, 'layout': layout}
 
 def build_system_data(planets, star, selected_idx=0):
-    import numpy as np
     traces = []
     teff = star.get('teff', 5778)
-    star_color = ('#aaccff' if teff > 7000 else '#ffffaa' if teff > 6000 else
-                  '#ffdd66' if teff > 5000 else '#ffaa44' if teff > 4000 else '#ff6644')
+
+    # 7-tier star color by temperature (from enhanced_visualization.py)
+    if teff > 30000:
+        star_color = '#aabbff'; star_glow = 'rgba(170,187,255,0.25)'
+    elif teff > 10000:
+        star_color = '#ccddff'; star_glow = 'rgba(204,221,255,0.25)'
+    elif teff > 7500:
+        star_color = '#f0f8ff'; star_glow = 'rgba(240,248,255,0.25)'
+    elif teff > 6000:
+        star_color = '#fff8dc'; star_glow = 'rgba(255,248,220,0.25)'
+    elif teff > 5000:
+        star_color = '#ffd700'; star_glow = 'rgba(255,215,0,0.25)'
+    elif teff > 3500:
+        star_color = '#ff8c00'; star_glow = 'rgba(255,140,0,0.25)'
+    else:
+        star_color = '#ff4500'; star_glow = 'rgba(255,69,0,0.25)'
+
+    # Star glow layer (large transparent sphere behind the star)
     traces.append({
         'type': 'scatter3d', 'x': [0], 'y': [0], 'z': [0],
         'mode': 'markers',
-        'marker': {'size': 18, 'color': star_color, 'opacity': 0.95, 'line': {'width': 2, 'color': 'white'}},
-        'name': star.get('name', 'Star'),
-        'hovertemplate': f'<b>{star.get("name", "Host Star")}</b><br>T: {teff} K<extra></extra>'
+        'marker': {'size': 42, 'color': star_glow, 'opacity': 0.35, 'line': {'width': 0}},
+        'showlegend': False, 'hoverinfo': 'skip'
     })
+    # Star body
+    traces.append({
+        'type': 'scatter3d', 'x': [0], 'y': [0], 'z': [0],
+        'mode': 'markers',
+        'marker': {'size': 22, 'color': star_color, 'opacity': 0.97, 'line': {'width': 2, 'color': 'white'}},
+        'name': star.get('name', 'Star'),
+        'hovertemplate': f'<b>{star.get("name","Host Star")}</b><br>T: {teff} K<br>Type: {star.get("type","Main Sequence")}<extra></extra>'
+    })
+
     if planets:
         hz_inner = planets[0].get('hz_inner', 0.75)
         hz_outer = planets[0].get('hz_outer', 1.77)
-        # Build filled annular habitable-zone band using mesh3d
-        N = 72  # segments for smooth ring
+        N = 72
         theta = [i * 2 * math.pi / N for i in range(N)]
-        # Vertices: inner ring (0..N-1) then outer ring (N..2N-1)
         vx = [hz_inner * math.cos(t) for t in theta] + [hz_outer * math.cos(t) for t in theta]
         vy = [hz_inner * math.sin(t) for t in theta] + [hz_outer * math.sin(t) for t in theta]
         vz = [0] * (2 * N)
-        # Triangulate two triangles per segment forming the annular quad strip
         ii, jj, kk = [], [], []
         for s in range(N):
             s1 = (s + 1) % N
-            # Triangle 1: inner[s], inner[s+1], outer[s]
-            ii.append(s);  jj.append(s1);      kk.append(s + N)
-            # Triangle 2: inner[s+1], outer[s+1], outer[s]
-            ii.append(s1); jj.append(s1 + N);  kk.append(s + N)
+            ii.append(s);  jj.append(s1);     kk.append(s + N)
+            ii.append(s1); jj.append(s1 + N); kk.append(s + N)
         traces.append({
-            'type': 'mesh3d',
-            'x': vx, 'y': vy, 'z': vz,
+            'type': 'mesh3d', 'x': vx, 'y': vy, 'z': vz,
             'i': ii, 'j': jj, 'k': kk,
-            'color': 'rgba(74,222,128,0.18)',
-            'opacity': 0.45,
-            'flatshading': True,
-            'showlegend': False,
-            'hoverinfo': 'skip',
+            'color': 'rgba(74,222,128,0.18)', 'opacity': 0.45,
+            'flatshading': True, 'showlegend': False, 'hoverinfo': 'skip',
             'lighting': {'ambient': 1, 'diffuse': 0, 'specular': 0},
         })
-        # Thin border lines for clarity
         border_theta = theta + [theta[0]]
-        traces.append({'type': 'scatter3d',
-            'x': [hz_inner * math.cos(t) for t in border_theta],
-            'y': [hz_inner * math.sin(t) for t in border_theta],
-            'z': [0] * len(border_theta), 'mode': 'lines',
-            'line': {'color': 'rgba(74,222,128,0.5)', 'width': 1},
-            'showlegend': False, 'hoverinfo': 'skip'})
-        traces.append({'type': 'scatter3d',
-            'x': [hz_outer * math.cos(t) for t in border_theta],
-            'y': [hz_outer * math.sin(t) for t in border_theta],
-            'z': [0] * len(border_theta), 'mode': 'lines',
-            'line': {'color': 'rgba(74,222,128,0.5)', 'width': 1},
-            'showlegend': False, 'hoverinfo': 'skip'})
+        for r in (hz_inner, hz_outer):
+            traces.append({'type': 'scatter3d',
+                'x': [r * math.cos(t) for t in border_theta],
+                'y': [r * math.sin(t) for t in border_theta],
+                'z': [0] * len(border_theta), 'mode': 'lines',
+                'line': {'color': 'rgba(74,222,128,0.45)', 'width': 1},
+                'showlegend': False, 'hoverinfo': 'skip'})
+
     for i, p in enumerate(planets):
         orbit = p.get('orbit', 1.0)
         random.seed(hash(p['name']))
@@ -1197,26 +1206,53 @@ def build_system_data(planets, star, selected_idx=0):
         px = orbit * math.cos(angle)
         py = orbit * math.sin(angle)
         pz = random.uniform(-0.05, 0.05) * orbit
-        size = min(14, max(5, p['radius'] * 4))
-        color = ('#7cb97c' if p['hab_score'] >= 70 else '#00d4ff' if p['hab_score'] >= 50 else '#d4a574' if p['hab_score'] >= 30 else '#e07878')
+        size = min(14, max(5, p.get('radius', 1) * 4))
+        hab = p.get('hab_score', 0)
+        if hab >= 70:
+            color = '#4ade80'; glow = 'rgba(74,222,128,0.3)'
+        elif hab >= 50:
+            color = '#60a5fa'; glow = 'rgba(96,165,250,0.3)'
+        elif hab >= 30:
+            color = '#fbbf24'; glow = 'rgba(251,191,36,0.3)'
+        else:
+            color = '#f87171'; glow = 'rgba(248,113,113,0.3)'
         is_sel = (i == selected_idx)
         orbit_theta = [j * 2 * math.pi / 100 for j in range(101)]
+        # Orbit line — brighter for selected planet
         traces.append({'type': 'scatter3d',
             'x': [orbit * math.cos(t) for t in orbit_theta],
             'y': [orbit * math.sin(t) for t in orbit_theta],
-            'z': [0]*101, 'mode': 'lines',
-            'line': {'color': 'rgba(255,255,255,0.12)', 'width': 1},
+            'z': [0] * 101, 'mode': 'lines',
+            'line': {'color': 'rgba(255,255,255,0.30)' if is_sel else 'rgba(255,255,255,0.10)',
+                     'width': 2 if is_sel else 1},
             'showlegend': False, 'hoverinfo': 'skip'})
+        # Planet body
         traces.append({
             'type': 'scatter3d', 'x': [px], 'y': [py], 'z': [pz],
             'mode': 'markers+text',
             'marker': {'size': size * (1.5 if is_sel else 1), 'color': color,
-                       'opacity': 1 if is_sel else 0.8,
+                       'opacity': 1 if is_sel else 0.85,
                        'line': {'width': 3 if is_sel else 1, 'color': 'white'}},
-            'text': [p['emoji'] if is_sel else ''], 'textposition': 'top center',
+            'text': [p.get('emoji', '🪐') if is_sel else ''], 'textposition': 'top center',
             'textfont': {'size': 18}, 'name': p['name'],
-            'hovertemplate': f'<b>{p["name"]}</b><br>Type: {p["type"]}<br>Orbit: {orbit:.3f} AU<br>Score: {p["hab_score"]}/100<extra></extra>'
+            'hovertemplate': (
+                f'<b>{p["name"]}</b><br>'
+                f'Type: {p.get("type","?")}<br>'
+                f'Orbit: {orbit:.3f} AU<br>'
+                f'Score: {hab}/100<br>'
+                f'Temp: {p.get("temp","?")} K<br>'
+                f'ESI: {p.get("esi","?")}<extra></extra>'
+            )
         })
+        # Planet glow for selected planet
+        if is_sel:
+            traces.append({
+                'type': 'scatter3d', 'x': [px], 'y': [py], 'z': [pz],
+                'mode': 'markers',
+                'marker': {'size': size * 2.8, 'color': glow, 'opacity': 0.35, 'line': {'width': 0}},
+                'showlegend': False, 'hoverinfo': 'skip'
+            })
+
     max_orbit = max((p.get('orbit', 1) for p in planets), default=2)
     ax_range = max_orbit * 1.5
     axis_hidden = {
@@ -1234,7 +1270,12 @@ def build_system_data(planets, star, selected_idx=0):
             'dragmode': 'orbit',
         },
         'paper_bgcolor': 'rgba(0,0,0,0)', 'plot_bgcolor': 'rgba(0,0,0,0)',
-        'showlegend': False, 'margin': {'l': 0, 'r': 0, 't': 0, 'b': 0}, 'height': 400
+        'showlegend': False, 'margin': {'l': 0, 'r': 0, 't': 0, 'b': 0}, 'height': 400,
+        'hoverlabel': {
+            'bgcolor': 'rgba(10,10,30,0.9)',
+            'bordercolor': 'rgba(255,255,255,0.2)',
+            'font': {'color': 'white', 'size': 12}
+        }
     }
     return {'data': traces, 'layout': layout}
 
