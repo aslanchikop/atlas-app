@@ -19,15 +19,13 @@ GEMINI_MODELS = [
     'gemini-3-flash-preview',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
+_RUNTIME_KEY = ''  # set via /api/set-key or GEMINI_API_KEY env var
 
 def _get_key():
-    """Read API key fresh on every call — survives Railway env var changes."""
-    return os.environ.get('GEMINI_API_KEY', '').strip()
+    """Return key from memory (set via /api/set-key) or env var."""
+    return _RUNTIME_KEY or os.environ.get('GEMINI_API_KEY', '').strip()
 
-# Log key status at startup (for Railway logs)
-_startup_key = _get_key()
-print(f'[Gemini] startup key present={bool(_startup_key)} len={len(_startup_key)}', flush=True)
-del _startup_key
+print(f'[Gemini] startup key present={bool(_get_key())}', flush=True)
 
 # ── In-memory share snapshots (token → report dict) ──────────────────────────
 _shares = {}
@@ -134,6 +132,19 @@ def api_gemini_test():
         except Exception as e:
             result.setdefault('errors', {})[model] = str(e)[:200]
     return jsonify(result)
+
+@app.route('/api/set-key', methods=['POST'])
+def api_set_key():
+    global _RUNTIME_KEY
+    data = request.get_json(force=True) or {}
+    secret = data.get('secret', '')
+    if secret != 'atlas-gemini-2025':
+        return jsonify({'error': 'wrong secret'}), 403
+    new_key = data.get('key', '').strip()
+    if not new_key:
+        return jsonify({'error': 'no key provided'}), 400
+    _RUNTIME_KEY = new_key
+    return jsonify({'ok': True, 'key_len': len(_RUNTIME_KEY)})
 
 @app.route('/api/discover', methods=['POST'])
 def api_discover():
