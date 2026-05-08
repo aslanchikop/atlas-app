@@ -490,16 +490,16 @@
        TAB: STAR MAP
        ═══════════════════════════════════════════════════ -->
   <div class="tab-content {% if tab=='map' %}active{% endif %}" id="tab-map">
-    {% if systems %}
-    <div class="metrics-row reveal">
-      <div class="glass metric-card"><div class="m-value">{{ systems|length }}</div><div class="m-label">{% if lang == 'en' %}Explored Systems{% else %}Зерттелген жүйелер{% endif %}</div></div>
-      <div class="glass metric-card"><div class="m-value">{{ systems.values()|sum(attribute='planet_count') if systems else 0 }}</div><div class="m-label">{% if lang == 'en' %}Total Planets{% else %}Барлық планеталар{% endif %}</div></div>
-      {% set distances = systems.values()|selectattr('distance')|map(attribute='distance')|list %}
-      <div class="glass metric-card"><div class="m-value">{{ "%.1f"|format(distances|min) if distances else '—' }} ly</div><div class="m-label">{% if lang == 'en' %}Nearest{% else %}Жақынырақ{% endif %}</div></div>
-      <div class="glass metric-card"><div class="m-value">{{ "%.1f"|format(distances|max) if distances else '—' }} ly</div><div class="m-label">{% if lang == 'en' %}Farthest{% else %}Алыс{% endif %}</div></div>
+    <!-- Stats row — updated by JS -->
+    <div class="metrics-row reveal" id="starmapStats" style="display:none">
+      <div class="glass metric-card"><div class="m-value" id="sm-count">0</div><div class="m-label">{% if lang == 'en' %}Explored Systems{% else %}Зерттелген жүйелер{% endif %}</div></div>
+      <div class="glass metric-card"><div class="m-value" id="sm-planets">0</div><div class="m-label">{% if lang == 'en' %}Total Planets{% else %}Барлық планеталар{% endif %}</div></div>
+      <div class="glass metric-card"><div class="m-value" id="sm-nearest">—</div><div class="m-label">{% if lang == 'en' %}Nearest{% else %}Жақынырақ {% endif %}</div></div>
+      <div class="glass metric-card"><div class="m-value" id="sm-farthest">—</div><div class="m-label">{% if lang == 'en' %}Farthest{% else %}Алыс{% endif %}</div></div>
     </div>
 
-    <div class="glass p-16 reveal mb-16">
+    <!-- Chart panel — always in DOM so Plotly can target it -->
+    <div class="glass p-16 reveal mb-16" id="starmapPanel" style="display:none">
       <div class="section-title">{% if lang == 'en' %}3D Stellar Neighborhood{% else %}3D Жұлдыз Маңы{% endif %}</div>
       <div class="d-flex gap-12 mb-12" style="flex-wrap:wrap">
         <span class="badge badge-success">🟢 High (70+)</span>
@@ -515,7 +515,8 @@
       </div>
     </div>
 
-    <div class="glass p-20 reveal">
+    <!-- System list panel — always in DOM, populated by JS -->
+    <div class="glass p-20 reveal" id="starmapListPanel" style="display:none">
       <div class="section-title">{% if lang == 'en' %}Explored Systems{% else %}Зерттелген жүйелер{% endif %}</div>
       <div class="sort-bar">
         <span class="text-xs text-muted">{% if lang == 'en' %}Sort by:{% else %}Сұрыптау:{% endif %}</span>
@@ -524,43 +525,16 @@
         <button class="sort-btn" onclick="sortSystems('planets',this)">{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %}</button>
         <button class="sort-btn" onclick="sortSystems('name',this)">{% if lang == 'en' %}Name{% else %}Атауы{% endif %}</button>
       </div>
-      <div id="systemListContainer">
-        {% for hostname, data in systems.items()|sort(attribute='1.best_score', reverse=True) %}
-        {% set sc = data.best_score %}
-        {% set sc_color = '#7cb97c' if sc >= 70 else ('#00d4ff' if sc >= 50 else ('#d4a574' if sc >= 30 else '#f87171')) %}
-        <div class="glass system-row hoverable" data-name="{{ hostname }}" data-score="{{ sc }}"
-             data-distance="{{ data.distance or 9999 }}" data-planets="{{ data.planet_count }}">
-          <div>
-            <div class="sys-name">🌟 {{ hostname }}</div>
-            <div class="sys-meta">{{ data.planet_count }} planet{{ 's' if data.planet_count != 1 }} · {{ "%.1f"|format(data.distance) if data.distance else '?' }} ly · {{ data.timestamp }}</div>
-          </div>
-          <div class="sys-score" style="color:{{ sc_color }}">{{ sc }}<span class="text-faint text-xs">/100</span></div>
-          <div>{% if data.habitable_count > 0 %}<span class="badge badge-success">{{ data.habitable_count }} HZ</span>{% endif %}</div>
-          <button class="btn btn-secondary btn-sm" style="gap:4px" onclick="toggleStarAI('{{ hostname }}', this)">✨ AI</button>
-          <button class="btn btn-secondary btn-sm" onclick="loadSystem('{{ hostname }}')">Load</button>
-          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSystem('{{ hostname }}', this)" title="Delete">✕</button>
-        </div>
-        <!-- AI description row — скрыта по умолчанию -->
-        <div id="starai-{{ hostname|replace(' ','_')|replace('-','_') }}"
-             style="display:none;padding:10px 16px 14px;margin-top:-6px;
-                    background:rgba(212,165,116,0.04);border:1px solid rgba(212,165,116,0.18);
-                    border-top:none;border-radius:0 0 10px 10px">
-          <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;
-                      color:var(--accent);margin-bottom:6px">✨ Gemini · System Profile</div>
-          <div class="starai-text-{{ hostname|replace(' ','_')|replace('-','_') }}"
-               style="font-size:0.78rem;color:var(--text-muted);line-height:1.6">…</div>
-        </div>
-        {% endfor %}
-      </div>
+      <div id="systemListContainer"></div>
     </div>
-    {% else %}
-    <div class="glass p-24 reveal" style="text-align:center;padding:60px">
+
+    <!-- Empty state — shown when no systems -->
+    <div class="glass p-24 reveal" id="starmapEmpty" style="text-align:center;padding:60px;display:none">
       <div style="font-size:3rem;margin-bottom:16px">🗺️</div>
       <div style="font-family:var(--font-display);font-size:1.2rem;margin-bottom:8px">{% if lang == 'en' %}Map is Empty{% else %}Карта бос{% endif %}</div>
       <div class="text-muted text-sm mb-20">{% if lang == 'en' %}Scan star systems to populate the map{% else %}Картаны толтыру үшін жұлдыз жүйелерін сканерлеңіз{% endif %}</div>
       <button class="btn btn-primary" onclick="switchTab('missions')">{% if lang == 'en' %}Start Scanning{% else %}Сканерлеуді бастау{% endif %}</button>
     </div>
-    {% endif %}
   </div>
 
   <!-- ═══════════════════════════════════════════════════
@@ -1785,8 +1759,70 @@ async function loadSystemChart(selIdx) {
 
 // ── Star map chart ────────────────────────────────────────
 async function loadStarmap() {
+  // Fetch current state to get systems list
+  const stateRes = await fetch('/api/get-state');
+  const state    = await stateRes.json();
+  const systems  = state.systems || {};
+  const names    = Object.keys(systems);
+
+  const emptyEl  = document.getElementById('starmapEmpty');
+  const statsEl  = document.getElementById('starmapStats');
+  const panelEl  = document.getElementById('starmapPanel');
+  const listEl   = document.getElementById('starmapListPanel');
+
+  if (names.length === 0) {
+    emptyEl.style.display  = 'block';
+    statsEl.style.display  = 'none';
+    panelEl.style.display  = 'none';
+    listEl.style.display   = 'none';
+    return;
+  }
+
+  // Show panels
+  emptyEl.style.display = 'none';
+  statsEl.style.display = '';
+  panelEl.style.display = '';
+  listEl.style.display  = '';
+
+  // Update stat cards
+  const allDists = names.map(n => systems[n].distance).filter(d => d > 0);
+  document.getElementById('sm-count').textContent   = names.length;
+  document.getElementById('sm-planets').textContent = names.reduce((s,n) => s + (systems[n].planet_count||0), 0);
+  document.getElementById('sm-nearest').textContent  = allDists.length ? Math.min(...allDists).toFixed(1) + ' ly' : '—';
+  document.getElementById('sm-farthest').textContent = allDists.length ? Math.max(...allDists).toFixed(1) + ' ly' : '—';
+
+  // Populate system list
+  const container = document.getElementById('systemListContainer');
+  const lang = '{{ lang }}';
+  const sortedNames = names.slice().sort((a,b) => (systems[b].best_score||0) - (systems[a].best_score||0));
+  container.innerHTML = sortedNames.map(hostname => {
+    const d  = systems[hostname];
+    const sc = d.best_score || 0;
+    const scColor = sc >= 70 ? '#7cb97c' : sc >= 50 ? '#00d4ff' : sc >= 30 ? '#d4a574' : '#f87171';
+    const safeName = hostname.replace(/[ ]/g,'_').replace(/[-]/g,'_');
+    const hzBadge = (d.habitable_count > 0) ? `<span class="badge badge-success">${d.habitable_count} HZ</span>` : '';
+    return `<div class="glass system-row hoverable" data-name="${hostname}" data-score="${sc}"
+         data-distance="${d.distance||9999}" data-planets="${d.planet_count||0}">
+      <div>
+        <div class="sys-name">🌟 ${hostname}</div>
+        <div class="sys-meta">${d.planet_count||0} planets · ${d.distance ? d.distance.toFixed(1) : '?'} ly · ${d.timestamp||''}</div>
+      </div>
+      <div class="sys-score" style="color:${scColor}">${sc}<span class="text-faint text-xs">/100</span></div>
+      <div>${hzBadge}</div>
+      <button class="btn btn-secondary btn-sm" style="gap:4px" onclick="toggleStarAI('${hostname}', this)">✨ AI</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadSystem('${hostname}')">Load</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSystem('${hostname}', this)" title="Delete">✕</button>
+    </div>
+    <div id="starai-${safeName}" style="display:none;padding:10px 16px 14px;margin-top:-6px;
+         background:rgba(212,165,116,0.04);border:1px solid rgba(212,165,116,0.18);
+         border-top:none;border-radius:0 0 10px 10px">
+      <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:6px">✨ ATLAS AI · System Profile</div>
+      <div class="starai-text-${safeName}" style="font-size:0.78rem;color:var(--text-muted);line-height:1.6">…</div>
+    </div>`;
+  }).join('');
+
+  // Render Plotly chart
   const wrap = document.getElementById('starmapChart');
-  if (!wrap) return;
   document.getElementById('starmapLoading').style.display = 'flex';
   const res  = await fetch('/api/chart/starmap', {method: 'POST'});
   const fig  = await res.json();
