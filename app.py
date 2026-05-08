@@ -14,9 +14,8 @@ app.secret_key = 'atlas-v21-key-2025'
 
 # ── Google Gemini ─────────────────────────────────────────────────────────────
 GEMINI_MODELS = [
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
     'gemini-3-flash-preview',
+    'gemini-2.0-flash',
 ]
 GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
 _RUNTIME_KEY = ''  # set via /api/set-key or GEMINI_API_KEY env var
