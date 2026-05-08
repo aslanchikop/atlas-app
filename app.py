@@ -1462,7 +1462,7 @@ def get_chat_response(message, lang='en', history=None, laika=False):
                 role = 'model' if h['role'] == 'assistant' else 'user'
                 contents.append({'role': role, 'parts': [{'text': h['content'][:300]}]})
         contents.append({'role': 'user', 'parts': [{'text': message[:400]}]})
-        result = call_gemini(contents, system, max_tokens=350)
+        result = call_gemini(contents, system, max_tokens=800)
         if result:
             return result, 'gemini'
 
@@ -2036,7 +2036,7 @@ def api_planet_report():
         f"Orbit: {p.get('orbit', '?')} AU, Period: {p.get('period', '?')} days"
     )
     contents = [{'role': 'user', 'parts': [{'text': f'Write a profile for this exoplanet:\n{info}'}]}]
-    result = call_gemini(contents, system, max_tokens=300)
+    result = call_gemini(contents, system, max_tokens=600)
     if result:
         return jsonify({'text': result, 'source': 'gemini'})
     return jsonify({'text': 'No AI data available.', 'source': 'fallback'})
