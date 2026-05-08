@@ -1462,7 +1462,7 @@ def get_chat_response(message, lang='en', history=None, laika=False):
                 role = 'model' if h['role'] == 'assistant' else 'user'
                 contents.append({'role': role, 'parts': [{'text': h['content'][:300]}]})
         contents.append({'role': 'user', 'parts': [{'text': message[:400]}]})
-        result = call_gemini(contents, system, max_tokens=800)
+        result = call_gemini(contents, system, max_tokens=2048)
         if result:
             return result, 'gemini'
 
@@ -1964,7 +1964,7 @@ def api_ai_analysis():
             f'Be precise and dramatic. {lang_note}'
         )
         contents = [{'role': 'user', 'parts': [{'text': f'Generate report from this data:\n{context}'}]}]
-        result = call_gemini(contents, system, max_tokens=500)
+        result = call_gemini(contents, system, max_tokens=2048)
         if result:
             return jsonify({'text': result, 'source': 'gemini'})
 
@@ -1992,7 +1992,7 @@ def api_ask_gemini():
             'Explain the given topic clearly and engagingly: 2-3 paragraphs, ~180 words. '
             f'Use scientific facts, give real examples (e.g. specific planets/missions). {lang_note}'
         )
-        max_tok = 400
+        max_tok = 2048
     elif mode == 'travel':
         system = (
             'You are ATLAS — exoplanet research AI. '
@@ -2000,10 +2000,10 @@ def api_ask_gemini():
             'what it would actually feel like to arrive at and survive on this destination. '
             f'Mention gravity, atmosphere, temperature, day length, sky color. {lang_note}'
         )
-        max_tok = 350
+        max_tok = 2048
     else:
         system = f'You are ATLAS — exoplanet research AI. Answer concisely. {lang_note}'
-        max_tok = 250
+        max_tok = 2048
 
     prompt = question if not context else f'{question}\n\nContext: {context}'
     contents = [{'role': 'user', 'parts': [{'text': prompt}]}]
@@ -2036,7 +2036,7 @@ def api_planet_report():
         f"Orbit: {p.get('orbit', '?')} AU, Period: {p.get('period', '?')} days"
     )
     contents = [{'role': 'user', 'parts': [{'text': f'Write a profile for this exoplanet:\n{info}'}]}]
-    result = call_gemini(contents, system, max_tokens=600)
+    result = call_gemini(contents, system, max_tokens=2048)
     if result:
         return jsonify({'text': result, 'source': 'gemini'})
     return jsonify({'text': 'No AI data available.', 'source': 'fallback'})
@@ -2057,7 +2057,7 @@ def api_space_fact():
     )
     prompt = f'Give me a fascinating fact{"about " + topic if topic else " about exoplanets or space exploration"}.'
     contents = [{'role': 'user', 'parts': [{'text': prompt}]}]
-    result = call_gemini(contents, system, max_tokens=150)
+    result = call_gemini(contents, system, max_tokens=512)
     if result:
         return jsonify({'text': result, 'source': 'gemini'})
     return jsonify({'text': 'No fact available.', 'source': 'fallback'})
@@ -2078,7 +2078,7 @@ def api_catalog_hint():
         f'is an interesting target for exoplanet habitability research. Be specific. {lang_note}'
     )
     contents = [{'role': 'user', 'parts': [{'text': f'Why is {star} worth scanning for habitable planets?'}]}]
-    result = call_gemini(contents, system, max_tokens=120)
+    result = call_gemini(contents, system, max_tokens=512)
     if result:
         return jsonify({'text': result, 'source': 'gemini'})
     return jsonify({'text': '', 'source': 'fallback'})

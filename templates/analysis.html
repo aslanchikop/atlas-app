@@ -103,7 +103,7 @@
     <!-- Top Candidates -->
     <div class="glass" style="padding:22px">
       <div class="section-title">{% if lang == 'en' %}Top Candidates{% else %}Үздік үміткерлер{% endif %}</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto">
         {% for p in top_planets %}
         <div class="glass hoverable" style="display:flex;align-items:center;gap:12px;padding:12px 14px">
           <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:0.82rem;flex-shrink:0;
@@ -172,7 +172,12 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         {% for rec in recommendations %}
         <div class="glass hoverable" style="padding:14px 16px;border-radius:var(--radius-md)">
-          <div class="rec-priority rec-{{ rec.priority }}" style="margin-bottom:6px">{{ rec.priority|upper }}</div>
+          <div class="rec-priority rec-{{ rec.priority }}" style="margin-bottom:6px">
+            {% if rec.priority == 'high' %}{% if lang == 'en' %}HIGH{% else %}ЖОҒАРЫ{% endif %}
+            {% elif rec.priority == 'medium' %}{% if lang == 'en' %}MEDIUM{% else %}ОРТАША{% endif %}
+            {% elif rec.priority == 'low' %}{% if lang == 'en' %}LOW{% else %}ТӨМЕН{% endif %}
+            {% else %}{{ rec.priority|upper }}{% endif %}
+          </div>
           <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.5">{{ rec.text[lang] if rec.text is mapping else rec.text }}</div>
         </div>
         {% endfor %}
@@ -260,7 +265,7 @@
       <div>
         <div class="section-title" style="margin-bottom:3px">{% if lang == 'en' %}🤖 AI Mission Report{% else %}🤖 ЖИ Миссия Есебі{% endif %}</div>
         <div style="font-size:0.72rem;color:var(--text-muted)">
-          {% if lang == 'en' %}Powered by Google Gemini 2.0 Flash{% else %}Google Gemini 2.0 Flash арқылы{% endif %}
+          {% if lang == 'en' %}Powered by ATLAS AI{% else %}ATLAS ЖИ арқылы{% endif %}
         </div>
       </div>
       <button id="aiGenBtn" onclick="generateAIReport()"
@@ -431,7 +436,7 @@ async function generateAIReport() {
         lbl.textContent = _kz ? 'Қайта жасау' : 'Regenerate';
         btn.disabled = false;
         // Show meta
-        const src = data.source === 'gemini' ? '✨ Google Gemini 2.0' : '🛰️ ATLAS AI';
+        const src = '🛰️ ATLAS AI';
         document.getElementById('aiSourceBadge').textContent = src;
         document.getElementById('aiTimestamp').textContent = new Date().toLocaleTimeString();
         meta.style.display = 'flex';
