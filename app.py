@@ -1157,18 +1157,25 @@ def build_system_data(planets, star, selected_idx=0):
     else:
         star_color = '#ff4500'; star_glow = 'rgba(255,69,0,0.25)'
 
-    # Star glow layer (large transparent sphere behind the star)
+    # Star glow layer 1 (outer corona - large & soft)
     traces.append({
         'type': 'scatter3d', 'x': [0], 'y': [0], 'z': [0],
         'mode': 'markers',
-        'marker': {'size': 42, 'color': star_glow, 'opacity': 0.35, 'line': {'width': 0}},
+        'marker': {'size': 55, 'color': star_glow, 'opacity': 0.15, 'line': {'width': 0}},
+        'showlegend': False, 'hoverinfo': 'skip'
+    })
+    # Star glow layer 2 (inner corona - medium & soft)
+    traces.append({
+        'type': 'scatter3d', 'x': [0], 'y': [0], 'z': [0],
+        'mode': 'markers',
+        'marker': {'size': 35, 'color': star_glow, 'opacity': 0.30, 'line': {'width': 0}},
         'showlegend': False, 'hoverinfo': 'skip'
     })
     # Star body
     traces.append({
         'type': 'scatter3d', 'x': [0], 'y': [0], 'z': [0],
         'mode': 'markers',
-        'marker': {'size': 22, 'color': star_color, 'opacity': 0.97, 'line': {'width': 2, 'color': 'white'}},
+        'marker': {'size': 20, 'color': star_color, 'opacity': 0.95, 'line': {'width': 1.5, 'color': 'white'}},
         'name': star.get('name', 'Star'),
         'hovertemplate': f'<b>{star.get("name","Host Star")}</b><br>T: {teff} K<br>Type: {star.get("type","Main Sequence")}<extra></extra>'
     })
@@ -1189,7 +1196,7 @@ def build_system_data(planets, star, selected_idx=0):
         traces.append({
             'type': 'mesh3d', 'x': vx, 'y': vy, 'z': vz,
             'i': ii, 'j': jj, 'k': kk,
-            'color': 'rgba(74,222,128,0.18)', 'opacity': 0.45,
+            'color': 'rgba(74,222,128,0.08)', 'opacity': 0.30,
             'flatshading': True, 'showlegend': False, 'hoverinfo': 'skip',
             'lighting': {'ambient': 1, 'diffuse': 0, 'specular': 0},
         })
@@ -1199,7 +1206,7 @@ def build_system_data(planets, star, selected_idx=0):
                 'x': [r * math.cos(t) for t in border_theta],
                 'y': [r * math.sin(t) for t in border_theta],
                 'z': [0] * len(border_theta), 'mode': 'lines',
-                'line': {'color': 'rgba(74,222,128,0.45)', 'width': 1},
+                'line': {'color': 'rgba(74,222,128,0.25)', 'width': 1},
                 'showlegend': False, 'hoverinfo': 'skip'})
 
     for i, p in enumerate(planets):
@@ -1221,14 +1228,29 @@ def build_system_data(planets, star, selected_idx=0):
             color = '#f87171'; glow = 'rgba(248,113,113,0.3)'
         is_sel = (i == selected_idx)
         orbit_theta = [j * 2 * math.pi / 100 for j in range(101)]
-        # Orbit line — brighter for selected planet
+
+        # Orbit line — highlighted glowing color for selected, thin transparent for others
+        if is_sel:
+            if hab >= 70:
+                orbit_color = 'rgba(74,222,128,0.45)'
+            elif hab >= 50:
+                orbit_color = 'rgba(96,165,250,0.45)'
+            elif hab >= 30:
+                orbit_color = 'rgba(251,191,36,0.45)'
+            else:
+                orbit_color = 'rgba(248,113,113,0.45)'
+            orbit_width = 3
+        else:
+            orbit_color = 'rgba(255,255,255,0.12)'
+            orbit_width = 1
+
         traces.append({'type': 'scatter3d',
             'x': [orbit * math.cos(t) for t in orbit_theta],
             'y': [orbit * math.sin(t) for t in orbit_theta],
             'z': [0] * 101, 'mode': 'lines',
-            'line': {'color': 'rgba(255,255,255,0.30)' if is_sel else 'rgba(255,255,255,0.10)',
-                     'width': 2 if is_sel else 1},
+            'line': {'color': orbit_color, 'width': orbit_width},
             'showlegend': False, 'hoverinfo': 'skip'})
+
         # Planet body
         traces.append({
             'type': 'scatter3d', 'x': [px], 'y': [py], 'z': [pz],
@@ -1257,11 +1279,12 @@ def build_system_data(planets, star, selected_idx=0):
             })
 
     max_orbit = max((p.get('orbit', 1) for p in planets), default=2)
-    ax_range = max_orbit * 1.5
+    ax_range = max_orbit * 1.2
     axis_hidden = {
         'visible': False, 'showticklabels': False, 'showgrid': False,
-        'zeroline': False, 'showbackground': False, 'showaxeslabels': False,
-        'showspikes': False, 'title': {'text': ''}
+        'zeroline': False, 'showbackground': False, 'backgroundcolor': 'rgba(0,0,0,0)',
+        'showline': False, 'gridcolor': 'rgba(0,0,0,0)', 'linecolor': 'rgba(0,0,0,0)',
+        'showaxeslabels': False, 'showspikes': False, 'title': {'text': ''}
     }
     layout = {
         'scene': {
@@ -1269,7 +1292,7 @@ def build_system_data(planets, star, selected_idx=0):
             'yaxis': dict(axis_hidden, range=[-ax_range, ax_range]),
             'zaxis': dict(axis_hidden, range=[-ax_range/3, ax_range/3]),
             'bgcolor': 'rgba(0,0,0,0)',
-            'camera': {'eye': {'x': 0, 'y': 0.1, 'z': 2.2}},
+            'camera': {'eye': {'x': 0, 'y': -1.0, 'z': 1.15}},
             'dragmode': 'orbit',
         },
         'paper_bgcolor': 'rgba(0,0,0,0)', 'plot_bgcolor': 'rgba(0,0,0,0)',
@@ -1287,13 +1310,39 @@ def build_radar_data(planets_dict):
     colors = ['#d4a574', '#7cb97c', '#00d4ff', '#e07878', '#a78bfa', '#fb923c']
     traces = []
     for idx, (name, data) in enumerate(planets_dict.items()):
-        esi_n  = data.get('esi', 0)
-        temp_n = max(0, min(1, 1 - abs(data.get('temp', 288) - 288) / 200))
-        size_n = max(0, min(1, 1 - abs(data.get('radius', 1) - 1) / 5))
-        grav_n = max(0, min(1, 1 - abs(data.get('gravity', 1) - 1) / 2))
-        hz_n   = 1 if data.get('in_hz', False) else 0.3
-        vals   = [esi_n, temp_n, size_n, grav_n, hz_n, esi_n]
-        color  = colors[idx % len(colors)]
+        if not isinstance(data, dict):
+            continue
+        try:
+            esi_n = float(data.get('esi') if data.get('esi') is not None else 0.0)
+        except (ValueError, TypeError):
+            esi_n = 0.0
+
+        try:
+            temp_raw = data.get('temp')
+            temp_val = float(temp_raw if temp_raw is not None else 288.0)
+            temp_n = max(0.0, min(1.0, 1.0 - abs(temp_val - 288.0) / 200.0))
+        except (ValueError, TypeError):
+            temp_n = 0.5
+
+        try:
+            rad_raw = data.get('radius')
+            rad_val = float(rad_raw if rad_raw is not None else 1.0)
+            size_n = max(0.0, min(1.0, 1.0 - abs(rad_val - 1.0) / 5.0))
+        except (ValueError, TypeError):
+            size_n = 0.5
+
+        try:
+            grav_raw = data.get('gravity')
+            grav_val = float(grav_raw if grav_raw is not None else 1.0)
+            grav_n = max(0.0, min(1.0, 1.0 - abs(grav_val - 1.0) / 2.0))
+        except (ValueError, TypeError):
+            grav_n = 0.5
+
+        is_hz = data.get('in_hz') in [True, 'true', 'True', 1, '1']
+        hz_n = 1.0 if is_hz else 0.3
+
+        vals = [esi_n, temp_n, size_n, grav_n, hz_n, esi_n]
+        color = colors[idx % len(colors)]
         traces.append({
             'type': 'scatterpolar', 'r': vals, 'theta': cats + [cats[0]],
             'fill': 'toself', 'name': name, 'opacity': 0.7,
@@ -1316,11 +1365,48 @@ def build_radar_data(planets_dict):
 def build_bar_data(planets_dict):
     names  = list(planets_dict.keys())
     colors = ['#d4a574', '#7cb97c', '#00d4ff', '#e07878']
+    
+    esi_vals = []
+    hab_vals = []
+    grav_vals = []
+    rad_vals = []
+    
+    for name, data in planets_dict.items():
+        if not isinstance(data, dict):
+            esi_vals.append(0.0)
+            hab_vals.append(0.0)
+            grav_vals.append(0.33)
+            rad_vals.append(0.2)
+            continue
+            
+        try:
+            esi_vals.append(float(data.get('esi') if data.get('esi') is not None else 0.0))
+        except (ValueError, TypeError):
+            esi_vals.append(0.0)
+            
+        try:
+            hab_score = float(data.get('hab_score') if data.get('hab_score') is not None else 0.0)
+            hab_vals.append(hab_score / 100.0)
+        except (ValueError, TypeError):
+            hab_vals.append(0.0)
+            
+        try:
+            grav = float(data.get('gravity') if data.get('gravity') is not None else 1.0)
+            grav_vals.append(min(3.0, grav) / 3.0)
+        except (ValueError, TypeError):
+            grav_vals.append(0.33)
+            
+        try:
+            rad = float(data.get('radius') if data.get('radius') is not None else 1.0)
+            rad_vals.append(min(5.0, rad) / 5.0)
+        except (ValueError, TypeError):
+            rad_vals.append(0.2)
+
     metrics = {
-        'ESI':            [d.get('esi', 0) for d in planets_dict.values()],
-        'Hab Score':      [d.get('hab_score', 0) / 100 for d in planets_dict.values()],
-        'Gravity (norm)': [min(3, d.get('gravity', 1)) / 3 for d in planets_dict.values()],
-        'Radius (norm)':  [min(5, d.get('radius', 1)) / 5 for d in planets_dict.values()],
+        'ESI':            esi_vals,
+        'Hab Score':      hab_vals,
+        'Gravity (norm)': grav_vals,
+        'Radius (norm)':  rad_vals,
     }
     traces = []
     for i, (metric, vals) in enumerate(metrics.items()):

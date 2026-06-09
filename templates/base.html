@@ -277,7 +277,7 @@
 </div>
 
 <!-- ── Laika — Space Dog Mascot ─────────────────────────── -->
-<div class="lk-wrap" id="laikaWrap" title="Click to chat with Laika 🐾">
+<div class="lk-wrap" id="laikaWrap" title="{% if lang == 'kz' %}Лайкамен сөйлесу үшін басыңыз 🐾{% else %}Click to chat with Laika 🐾{% endif %}">
   <div class="lk-bubble" id="laikaBubble"></div>
   <div class="lk-visual" id="laikaVisual">
     <div class="lk-dog" id="laikaDog">
@@ -843,7 +843,7 @@
     resetSleep();
   }
 
-  function face(right) { visual.style.transform = right ? '' : 'scaleX(-1)'; }
+  function face(right) { dog.style.transform = right ? '' : 'scaleX(-1)'; }
 
   // ── Movement ─────────────────────────────────────────────
   function moveTo(tx, ty, speed = 95) {
