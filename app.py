@@ -2270,11 +2270,11 @@ def analysis_share(token):
 # Static file helpers
 @app.route('/bg/main')
 def bg_main():
-    return send_from_directory('.', 'background.png')
+    return send_from_directory('archive', 'background.png')
 
 @app.route('/bg/none')
 def bg_none():
-    return send_from_directory('.', 'background_none.png')
+    return send_from_directory('archive', 'background_none.png')
 
 if __name__ == '__main__':
     import sys
