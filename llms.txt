@@ -1,0 +1,54 @@
+# ATLAS (Autonomous Terrestrial Life Analysis System) — Project Map
+
+This document is a high-level overview of the ATLAS repository designed for LLMs/AI assistants to quickly understand the codebase structure and architecture without scanning the entire code.
+
+---
+
+## 🛠️ Tech Stack & Architecture
+- **Backend:** Python / Flask (web server), `requests` (API clients), `joblib` (ML model loaders), `dotenv` (environment variables).
+- **Frontend:** Vanilla HTML5 / CSS3 (glassmorphic theme), JavaScript (system rendering & UI logic), Plotly.js (interactive charts).
+- **Data Source:** NASA Exoplanet Archive TAP API.
+- **AI Integration:** Google Gemini API (via direct HTTP `generateContent` endpoints).
+- **Local Cache:** JSON-backed persistent cache (`gemini_cache.json`) to save Gemini API quota.
+
+---
+
+## 📂 Directory Structure Map
+
+- **`/` (Root):**
+  - [app.py](file:///c:/Users/user/Documents/atlas-app-main/app.py) — Core backend server. Loads ML models, handles routing, NASA API integration, and Gemini API calls with local cache. **This is the project's brain.**
+  - [requirements.txt](file:///c:/Users/user/Documents/atlas-app-main/requirements.txt) — Python dependencies (`flask`, `joblib`, `google-genai`, `scikit-learn`, `requests`, `python-dotenv`).
+  - [Procfile](file:///c:/Users/user/Documents/atlas-app-main/Procfile) — Heroku / deployment command (`web: gunicorn app:app`).
+  - [gemini_cache.json](file:///c:/Users/user/Documents/atlas-app-main/gemini_cache.json) — Local file cache for Gemini responses.
+  - [exoplanet_model.pkl](file:///c:/Users/user/Documents/atlas-app-main/exoplanet_model.pkl) & [features.pkl](file:///c:/Users/user/Documents/atlas-app-main/features.pkl) — Habitability ML model.
+  - [exo_chatbot_model.pkl](file:///c:/Users/user/Documents/atlas-app-main/exo_chatbot_model.pkl) & [exo_chatbot_responses.json](file:///c:/Users/user/Documents/atlas-app-main/exo_chatbot_responses.json) — Offline chatbot helper.
+  - [.gitignore](file:///c:/Users/user/Documents/atlas-app-main/.gitignore) — Ignored files (caches, env files, pyc).
+
+- **`/templates` (HTML Templates):**
+  - [base.html](file:///c:/Users/user/Documents/atlas-app-main/templates/base.html) — Navigation navbar, auth login overlays, custom SVG Laika mascot companion, chat window, and Laika's reactive JS script.
+  - [explore.html](file:///c:/Users/user/Documents/atlas-app-main/templates/explore.html) — Star Catalogs panel, orbital scan visualization, planet profile detail cards, travel calculator, encyclopedia, and mission log.
+  - [analysis.html](file:///c:/Users/user/Documents/atlas-app-main/templates/analysis.html) — Scientific charts (Plotly) and global AI mission report.
+  - [home.html](file:///c:/Users/user/Documents/atlas-app-main/templates/home.html) — Landing page, stats counters, slideshow.
+  - [about.html](file:///c:/Users/user/Documents/atlas-app-main/templates/about.html) — Project reference guide.
+  - [share.html](file:///c:/Users/user/Documents/atlas-app-main/templates/share.html) — Report share page.
+  - [encyclopedia.html](file:///c:/Users/user/Documents/atlas-app-main/templates/encyclopedia.html) — Reference details.
+
+- **`/static` (Assets):**
+  - [/css/atlas.css](file:///c:/Users/user/Documents/atlas-app-main/static/css/atlas.css) — Global stylesheet. Defines variables (colors, blurs, borders) and Craft.do-style glassmorphic classes.
+  - [/js/atlas.js](file:///c:/Users/user/Documents/atlas-app-main/static/js/atlas.js) — Utility JS code.
+  - [/img](file:///c:/Users/user/Documents/atlas-app-main/static/img) — Dynamic images (`background.png`, `background_none.png`).
+
+- **`/skills`:**
+  - Contains developer skill markdown files.
+
+- **`/archive`:**
+  - Legacy backup code, mockup designs, and logs. Not used in runtime.
+
+---
+
+## 🔑 Key API Integrations & Core Functions in `app.py`
+1. `calc_esi(radius, temp)`: Computes Earth Similarity Index (0 to 1).
+2. `predict_life_potential(...)`: Estimates habitability scoring based on radius, ESI, temp, and atmosphere.
+3. `call_gemini(contents, system_text)`: Sends request to Gemini API (`gemini-1.5-flash` / `gemini-2.0-flash`). Checks `_gemini_cache` before calling and dumps new responses to `gemini_cache.json`.
+4. `/api/discover`: Queries NASA TAP endpoint for confirmed planets.
+5. `/api/login` / `/api/get-state`: Manages user profile & achievements in-memory session.

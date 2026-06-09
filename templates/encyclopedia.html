@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Reference Guide — ATLAS{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="scan-sweep"></div>
+
+  <div class="hud-status-strip">
+    <span class="hud-tag">ATLAS · Reference Module</span>
+    <span class="hud-tag-sep"></span>
+    <span class="hud-tag">{% if lang == 'en' %}Scientific Knowledge Base{% else %}Ғылыми Білім Базасы{% endif %}</span>
+    <span class="hud-tag-sep"></span>
+    <span style="display:flex;align-items:center;gap:6px"><span class="status-dot"></span><span class="hud-tag">{{ topics|length }} {% if lang == 'en' %}Topics{% else %}Тақырып{% endif %}</span></span>
+  </div>
+
+  <div class="page-header reveal">
+    <div>
+      <p class="page-subtitle-hud">{% if lang == 'en' %}Scientific Knowledge Base{% else %}Ғылыми Білім Базасы{% endif %}</p>
+      <h1 class="page-title">{% if lang == 'en' %}Reference Guide{% else %}Анықтама{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'en' %}Scientific concepts behind the ATLAS analysis engine{% else %}ATLAS талдау жүйесінің артындағы ғылыми тұжырымдамалар{% endif %}</p>
+    </div>
+  </div>
+
+  <div class="enc-layout reveal">
+
+    <!-- Sidebar nav -->
+    <aside class="enc-sidebar glass">
+      <p class="enc-sidebar-title">{% if lang == 'en' %}Topics{% else %}Тақырыптар{% endif %}</p>
+      <ul class="enc-nav" id="encNav">
+        {% for topic in topics %}
+        <li>
+          <button class="enc-nav-btn {% if loop.first %}active{% endif %}"
+                  data-topic="{{ topic.id }}"
+                  onclick="showTopic('{{ topic.id }}')">
+            <span class="enc-nav-icon">{{ topic.icon }}</span>
+            <span>{{ topic.title[lang] if topic.title is mapping else topic.title }}</span>
+          </button>
+        </li>
+        {% endfor %}
+      </ul>
+    </aside>
+
+    <!-- Content area -->
+    <main class="enc-content glass glass-inner-glow">
+      {% for topic in topics %}
+      <div class="enc-article {% if loop.first %}active{% endif %}" id="topic-{{ topic.id }}">
+        <div class="enc-article-header">
+          <span class="enc-article-icon">{{ topic.icon }}</span>
+          <h2>{{ topic.title[lang] if topic.title is mapping else topic.title }}</h2>
+        </div>
+        <div class="enc-body markdown-body" id="body-{{ topic.id }}"
+             data-md-en="{{ topic.content['en']|default('')|e }}"
+             data-md-kz="{{ topic.content['kz']|default(topic.content['en'])|default('')|e }}">
+        </div>
+
+        {% if topic.formula %}
+        <div class="enc-formula glass">
+          <div class="enc-formula-label">{% if lang == 'en' %}Formula{% else %}Формула{% endif %}</div>
+          <code class="enc-formula-code">{{ topic.formula }}</code>
+          {% if topic.formula_desc %}
+          <p class="enc-formula-desc muted-text">{{ topic.formula_desc[lang] if topic.formula_desc is mapping else topic.formula_desc }}</p>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if topic.parameters %}
+        <div class="enc-params">
+          <h4>{% if lang == 'en' %}Parameters{% else %}Параметрлер{% endif %}</h4>
+          <div class="enc-params-grid">
+            {% for param in topic.parameters %}
+            <div class="enc-param-card glass hoverable">
+              <div class="enc-param-symbol">{{ param.symbol }}</div>
+              <div class="enc-param-name">{{ param.name[lang] if param.name is mapping else param.name }}</div>
+              <div class="enc-param-range muted-text">{{ param.range }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if topic.examples %}
+        <div class="enc-examples">
+          <h4>{% if lang == 'en' %}Examples{% else %}Мысалдар{% endif %}</h4>
+          <div class="enc-examples-list">
+            {% for ex in topic.examples %}
+            <div class="enc-example-row glass">
+              <div class="enc-example-name">{{ ex.name }}</div>
+              <div class="enc-example-value accent-text">{{ ex.value }}</div>
+              <div class="enc-example-note muted-text">{{ ex.note[lang] if ex.note is mapping else ex.note }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- ── Gemini Ask Button ── -->
+        <div style="margin-top:24px;border-top:1px solid var(--border);padding-top:20px">
+          <button class="btn btn-secondary" style="gap:8px;display:inline-flex;align-items:center"
+                  onclick="askGemini('{{ topic.id }}', '{{ (topic.title[lang] if topic.title is mapping else topic.title)|e }}')">
+            <span>✨</span>
+            <span>{% if lang == 'en' %}Ask Gemini about this topic{% else %}Осы тақырып бойынша Gemini-ден сұрау{% endif %}</span>
+          </button>
+
+          <!-- AI answer panel (hidden by default) -->
+          <div id="gemini-{{ topic.id }}" style="display:none;margin-top:16px;
+               background:rgba(212,165,116,0.04);border:1px solid rgba(212,165,116,0.2);
+               border-radius:12px;padding:18px 20px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <span style="font-size:0.95rem">✨</span>
+              <span style="font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent)">Gemini AI</span>
+              <span id="gemini-badge-{{ topic.id }}"
+                    style="font-size:0.60rem;color:var(--text-faint);margin-left:auto"></span>
+            </div>
+            <div id="gemini-text-{{ topic.id }}"
+                 style="font-size:0.86rem;line-height:1.8;color:var(--text-secondary);white-space:pre-wrap"></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </main>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ENC_LANG = "{{ lang }}";
+
+// Render all markdown bodies on load using Marked.js
+function renderAllMarkdown() {
+  document.querySelectorAll('.enc-body[data-md-en]').forEach(el => {
+    const raw = ENC_LANG === 'kz'
+      ? (el.dataset.mdKz || el.dataset.mdEn || '')
+      : (el.dataset.mdEn || '');
+    if (raw && typeof marked !== 'undefined') {
+      el.innerHTML = marked.parse(raw);
+    }
+  });
+}
+
+function showTopic(id) {
+  document.querySelectorAll('.enc-article').forEach(a => a.classList.remove('active'));
+  document.querySelectorAll('.enc-nav-btn').forEach(b => b.classList.remove('active'));
+  const article = document.getElementById('topic-' + id);
+  const btn = document.querySelector(`.enc-nav-btn[data-topic="${id}"]`);
+  if (article) article.classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  const btns = Array.from(document.querySelectorAll('.enc-nav-btn'));
+  const active = btns.findIndex(b => b.classList.contains('active'));
+  if (e.key === 'ArrowDown' && active < btns.length - 1) {
+    btns[active + 1].click(); btns[active + 1].focus();
+  } else if (e.key === 'ArrowUp' && active > 0) {
+    btns[active - 1].click(); btns[active - 1].focus();
+  }
+});
+
+// Run after Marked.js is available
+if (typeof marked !== 'undefined') {
+  renderAllMarkdown();
+} else {
+  window.addEventListener('load', renderAllMarkdown);
+}
+
+// ── Gemini per-topic ──────────────────────────────────────────────────────────
+const _geminiCache = {};
+
+async function askGemini(topicId, topicTitle) {
+  const panel  = document.getElementById('gemini-' + topicId);
+  const txtEl  = document.getElementById('gemini-text-' + topicId);
+  const badge  = document.getElementById('gemini-badge-' + topicId);
+  const _kz    = ENC_LANG === 'kz';
+
+  // Если уже есть кэш — просто показать
+  if (_geminiCache[topicId]) {
+    panel.style.display = 'block';
+    return;
+  }
+
+  panel.style.display = 'block';
+  txtEl.textContent = _kz ? 'Жасалуда…' : 'Generating…';
+  badge.textContent = '';
+
+  try {
+    const r = await fetch('/api/ask_gemini', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        question: `Explain this exoplanet science topic in depth: "${topicTitle}"`,
+        mode: 'encyclopedia',
+        lang: ENC_LANG
+      })
+    });
+    const d = await r.json();
+    if (d.text) {
+      _geminiCache[topicId] = d.text;
+      // Typewriter effect
+      txtEl.textContent = '';
+      const chars = d.text.split('');
+      let i = 0;
+      function type() { if (i < chars.length) { txtEl.textContent += chars[i++]; setTimeout(type, 9); } }
+      type();
+      badge.textContent = '✨ Gemini 2.0 Flash · ' + new Date().toLocaleTimeString();
+    } else {
+      txtEl.textContent = _kz ? 'Деректер жоқ.' : 'No response.';
+    }
+  } catch(e) {
+    txtEl.textContent = _kz ? 'Қате орын алды.' : 'Error occurred.';
+  }
+}
+</script>
+{% endblock %}

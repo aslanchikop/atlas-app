@@ -1,0 +1,77 @@
+{
+  "habitability": {
+    "ru": "🌱 **Лучшие кандидаты на обитаемость:**\n\n• **TOI-700d** — ESI 0.93, в зоне обитаемости красного карлика\n• **TRAPPIST-1e** — ESI 0.85, скалистая планета размером с Землю\n• **Proxima b** — ESI 0.87, ближайшая к нам (4.24 св.г.)\n• **Kepler-442b** — ESI 0.84, суперземля в зоне HZ\n\nВсе они находятся в зоне обитаемости своих звёзд, где возможна жидкая вода.",
+    "en": "🌱 **Best habitability candidates:**\n\n• **TOI-700d** — ESI 0.93, in red dwarf's habitable zone\n• **TRAPPIST-1e** — ESI 0.85, Earth-sized rocky planet\n• **Proxima b** — ESI 0.87, nearest to us (4.24 ly)\n• **Kepler-442b** — ESI 0.84, super-Earth in HZ\n\nAll are located in their stars' habitable zones where liquid water is possible.",
+    "kz": "🌱 **Мекендеуге лайық үміткерлер:**\n\n• **TOI-700d** — ESI 0.93, қызыл ергежейлінің мекендеу аймағында\n• **TRAPPIST-1e** — ESI 0.85, Жер өлшемді тасты планета\n• **Proxima b** — ESI 0.87, бізге ең жақын (4.24 ж.ж.)\n• **Kepler-442b** — ESI 0.84, HZ аймағындағы суперЖер"
+  },
+  "hz": {
+    "ru": "🌿 **Зона обитаемости (Habitable Zone)** — область вокруг звезды, где температура позволяет существовать жидкой воде на поверхности планеты.\n\n📐 **Расчёт:** HZ зависит от светимости звезды:\n• Внутренняя граница: 0.75 × √L AU\n• Внешняя граница: 1.77 × √L AU\n\n🔴 **M-карлики:** HZ очень близко (0.01-0.05 AU)\n☀️ **G-звёзды (как Солнце):** HZ около 1 AU\n🔵 **F-звёзды:** HZ далеко (1.5-3 AU)",
+    "en": "🌿 **Habitable Zone (HZ)** — region around a star where temperatures allow liquid water on a planet's surface.\n\n📐 **Calculation:** HZ depends on stellar luminosity:\n• Inner edge: 0.75 × √L AU\n• Outer edge: 1.77 × √L AU\n\n🔴 **M-dwarfs:** HZ very close (0.01-0.05 AU)\n☀️ **G-stars (like Sun):** HZ around 1 AU\n🔵 **F-stars:** HZ far (1.5-3 AU)",
+    "kz": "🌿 **Мекендеу аймағы (HZ)** — жұлдыз айналасындағы планета бетінде сұйық су болуы мүмкін аймақ.\n\n📐 **Есептеу:** HZ жұлдыз жарықтылығына байланысты:\n• Ішкі шекара: 0.75 × √L AU\n• Сыртқы шекара: 1.77 × √L AU"
+  },
+  "temperature": {
+    "ru": "🌡️ **Температура экзопланеты** рассчитывается двумя способами:\n\n📡 **Прямое измерение** — NASA получает данные спектроскопией для транзитных планет\n\n📐 **Расчёт по Стефану-Больцману:**\n```\nT = T_star × √(R_star / 2×orbit) × (1-albedo)^0.25\n```\n\nГде:\n• T_star — температура звезды (K)\n• R_star — радиус звезды\n• orbit — расстояние до звезды (AU)\n• albedo — отражательная способность (~0.3)",
+    "en": "🌡️ **Exoplanet temperature** is calculated two ways:\n\n📡 **Direct measurement** — NASA gets spectroscopy data for transiting planets\n\n📐 **Stefan-Boltzmann calculation:**\n```\nT = T_star × √(R_star / 2×orbit) × (1-albedo)^0.25\n```\n\nWhere:\n• T_star — stellar temperature (K)\n• R_star — stellar radius\n• orbit — distance to star (AU)\n• albedo — reflectivity (~0.3)",
+    "kz": "🌡️ **Экзопланета температурасы** екі жолмен есептеледі:\n\n📡 **Тікелей өлшеу** — NASA транзитті планеталар үшін спектроскопия деректерін алады\n\n📐 **Стефан-Больцман бойынша есептеу**"
+  },
+  "stars": {
+    "ru": "⭐ **Спектральные классы звёзд:**\n\n🔵 **O, B, A** — горячие (>7500K), яркие, короткоживущие\n⚪ **F** — тёплые (6000-7500K), больше Солнца\n☀️ **G** — солнцеподобные (5000-6000K), идеальны для жизни\n🟠 **K** — оранжевые (3500-5000K), стабильные\n🔴 **M** — красные карлики (<3500K), самые распространённые\n\n**Интересно:** 70% звёзд — M-карлики. Они живут триллионы лет, но имеют узкую HZ и сильные вспышки.",
+    "en": "⭐ **Stellar spectral classes:**\n\n🔵 **O, B, A** — hot (>7500K), bright, short-lived\n⚪ **F** — warm (6000-7500K), larger than Sun\n☀️ **G** — Sun-like (5000-6000K), ideal for life\n🟠 **K** — orange (3500-5000K), stable\n🔴 **M** — red dwarfs (<3500K), most common\n\n**Interesting:** 70% of stars are M-dwarfs. They live trillions of years but have narrow HZ and strong flares.",
+    "kz": "⭐ **Жұлдыздардың спектрлік кластары:**\n\n🔵 **O, B, A** — ыстық (>7500K)\n☀️ **G** — Күнге ұқсас (5000-6000K)\n🔴 **M** — қызыл ергежейлілер (<3500K)"
+  },
+  "planets": {
+    "ru": "🪐 **Известные экзопланеты:**\n\n**Proxima b** — ближайшая (4.24 св.г.), R=1.08 R⊕, в HZ красного карлика. Риск: вспышки звезды.\n\n**TRAPPIST-1 система** — 7 скалистых планет! e, f, g — в зоне HZ. Уникальная компактная система.\n\n**Kepler-442b** — суперземля (R=1.34), ESI 0.84, очень похожа на Землю.\n\n**K2-18b** — возможный океанический мир с водяным паром в атмосфере!",
+    "en": "🪐 **Notable exoplanets:**\n\n**Proxima b** — nearest (4.24 ly), R=1.08 R⊕, in red dwarf's HZ. Risk: stellar flares.\n\n**TRAPPIST-1 system** — 7 rocky planets! e, f, g — in HZ. Unique compact system.\n\n**Kepler-442b** — super-Earth (R=1.34), ESI 0.84, very Earth-like.\n\n**K2-18b** — possible ocean world with water vapor detected!",
+    "kz": "🪐 **Белгілі экзопланеталар:**\n\n**Proxima b** — ең жақын (4.24 ж.ж.)\n**TRAPPIST-1 жүйесі** — 7 тасты планета!\n**Kepler-442b** — суперЖер, ESI 0.84"
+  },
+  "detection": {
+    "ru": "🔭 **Методы обнаружения экзопланет:**\n\n1️⃣ **Транзитный метод** (Kepler, TESS) — планета проходит перед звездой, снижая яркость на 0.01-1%\n\n2️⃣ **Радиальные скорости** — звезда «качается» под гравитацией планеты\n\n3️⃣ **Прямое наблюдение** — блокируем свет звезды коронографом\n\n4️⃣ **Микролинзирование** — гравитация изгибает свет\n\n📊 **Статистика:** ~5500 подтверждённых экзопланет (2024). ~50 в зоне HZ.",
+    "en": "🔭 **Exoplanet detection methods:**\n\n1️⃣ **Transit method** (Kepler, TESS) — planet passes in front of star, dimming it 0.01-1%\n\n2️⃣ **Radial velocity** — star wobbles due to planet's gravity\n\n3️⃣ **Direct imaging** — block starlight with coronagraph\n\n4️⃣ **Microlensing** — gravity bends light\n\n📊 **Stats:** ~5500 confirmed exoplanets (2024). ~50 in HZ.",
+    "kz": "🔭 **Экзопланеталарды табу әдістері:**\n\n1️⃣ **Транзит әдісі** — планета жұлдыз алдынан өтеді\n2️⃣ **Радиалды жылдамдық** — жұлдыз «тербеледі»\n\n📊 ~5500 расталған экзопланета (2024)"
+  },
+  "hazards": {
+    "ru": "⚠️ **Опасности на экзопланетах:**\n\n🔒 **Приливной захват** — одна сторона всегда к звезде (день +300°C), другая в вечной ночи (-200°C)\n\n☢️ **Звёздные вспышки** — M-карлики выбрасывают смертельную радиацию, сносят атмосферу\n\n⚖️ **Гравитация** — на суперземле (2 M⊕) g = 1.5g, тяжело двигаться\n\n🌋 **Вулканизм** — приливной нагрев от звезды вызывает мощный вулканизм\n\n💨 **Атмосфера** — может быть токсичной (CO₂, H₂S) или слишком плотной",
+    "en": "⚠️ **Exoplanet hazards:**\n\n🔒 **Tidal locking** — one side always facing star (day +300°C), other in eternal night (-200°C)\n\n☢️ **Stellar flares** — M-dwarfs emit deadly radiation, strip atmospheres\n\n⚖️ **Gravity** — on super-Earth (2 M⊕) g = 1.5g, hard to move\n\n🌋 **Volcanism** — tidal heating from star causes intense volcanism\n\n💨 **Atmosphere** — may be toxic (CO₂, H₂S) or too dense",
+    "kz": "⚠️ **Экзопланеталардағы қауіптер:**\n\n🔒 **Толқындық бекіту** — бір жағы әрқашан жұлдызға қарайды\n☢️ **Жұлдыз жарқылдары** — өлімге әкелетін радиация"
+  },
+  "life": {
+    "ru": "🧬 **Биосигнатуры — признаки жизни:**\n\n🌿 **Кислород + Метан** — на Земле O₂ и CH₄ не должны сосуществовать (реагируют). Их наличие = жизнь постоянно производит оба газа.\n\n🛡️ **Озон (O₃)** — образуется из O₂, защищает от UV\n\n🔬 **Сложные молекулы** — фосфин, диметилсульфид\n\n📡 **Техносигнатуры** — радиосигналы, свет городов, загрязнение атмосферы\n\n**JWST** уже анализирует атмосферы TRAPPIST-1 и K2-18b!",
+    "en": "🧬 **Biosignatures — signs of life:**\n\n🌿 **Oxygen + Methane** — on Earth O₂ and CH₄ shouldn't coexist (they react). Their presence = life constantly produces both gases.\n\n🛡️ **Ozone (O₃)** — forms from O₂, protects from UV\n\n🔬 **Complex molecules** — phosphine, dimethyl sulfide\n\n📡 **Technosignatures** — radio signals, city lights, pollution\n\n**JWST** is already analyzing TRAPPIST-1 and K2-18b atmospheres!",
+    "kz": "🧬 **Биосигнатуралар — тіршілік белгілері:**\n\n🌿 **Оттегі + Метан** — бірге болмауы керек, бірақ тіршілік екеуін де өндіреді\n🛡️ **Озон** — UV-ден қорғайды"
+  },
+  "anomalies": {
+    "ru": "🔮 **Аномальные типы планет:**\n\n🔥 **Hot Jupiter** — газовый гигант на орбите <0.1 AU, T>1000K. Не мог образоваться так близко — мигрировал!\n\n🌍 **Суперземля** — 1.5-2 R⊕, каменистая, возможно с плотной атмосферой\n\n🌊 **Океанический мир** — планета покрытая глобальным океаном глубиной 100+ км\n\n💨 **Мини-Нептун** — между Землёй и Нептуном, газовая оболочка\n\n🎈 **Super-Puff** — гигант с плотностью меньше воды!",
+    "en": "🔮 **Anomalous planet types:**\n\n🔥 **Hot Jupiter** — gas giant orbiting <0.1 AU, T>1000K. Couldn't form there — migrated!\n\n🌍 **Super-Earth** — 1.5-2 R⊕, rocky, possibly with thick atmosphere\n\n🌊 **Ocean world** — planet covered by global ocean 100+ km deep\n\n💨 **Mini-Neptune** — between Earth and Neptune, gaseous envelope\n\n🎈 **Super-Puff** — giant with density less than water!",
+    "kz": "🔮 **Аномальды планета түрлері:**\n\n🔥 **Ыстық Юпитер** — газ алыбы <0.1 AU орбитада\n🌍 **СуперЖер** — 1.5-2 R⊕, тасты планета"
+  },
+  "esi": {
+    "ru": "📊 **ESI (Earth Similarity Index)** — индекс подобия Земле от 0 до 1.\n\n**Формула учитывает:**\n• Радиус планеты (оптимум: 1 R⊕)\n• Температуру (оптимум: 288K)\n• Плотность\n• Скорость убегания\n\n**Рекорды:**\n• ESI = 1.00 — Земля\n• ESI = 0.93 — TOI-700d\n• ESI = 0.87 — Proxima b\n• ESI = 0.85 — TRAPPIST-1e\n\nESI > 0.8 считается «землеподобным».",
+    "en": "📊 **ESI (Earth Similarity Index)** — Earth similarity score from 0 to 1.\n\n**Formula considers:**\n• Planet radius (optimal: 1 R⊕)\n• Temperature (optimal: 288K)\n• Density\n• Escape velocity\n\n**Records:**\n• ESI = 1.00 — Earth\n• ESI = 0.93 — TOI-700d\n• ESI = 0.87 — Proxima b\n• ESI = 0.85 — TRAPPIST-1e\n\nESI > 0.8 is considered 'Earth-like'.",
+    "kz": "📊 **ESI (Жерге ұқсастық индексі)** — 0-ден 1-ге дейінгі ұпай.\n\n**Рекордтар:**\n• ESI = 1.00 — Жер\n• ESI = 0.93 — TOI-700d"
+  },
+  "atmosphere": {
+    "ru": "🌫️ **Атмосферы экзопланет:**\n\n🪨 **Скалистые (< 1.5 R⊕):**\n• Тонкая CO₂/N₂ или Earth-like N₂/O₂\n• Может быть разрушена звездой\n\n🌊 **Суперземли (1.5-2 R⊕):**\n• Плотная CO₂ (как Венера) или H₂O пар\n\n💨 **Мини-Нептуны (2-4 R⊕):**\n• H₂/He оболочка, возможен океан под ней\n\n🪐 **Газовые гиганты (> 4 R⊕):**\n• H₂/He доминируют, CH₄/NH₃ облака",
+    "en": "🌫️ **Exoplanet atmospheres:**\n\n🪨 **Rocky (< 1.5 R⊕):**\n• Thin CO₂/N₂ or Earth-like N₂/O₂\n• May be stripped by star\n\n🌊 **Super-Earths (1.5-2 R⊕):**\n• Dense CO₂ (Venus-like) or H₂O vapor\n\n💨 **Mini-Neptunes (2-4 R⊕):**\n• H₂/He envelope, possible ocean beneath\n\n🪐 **Gas giants (> 4 R⊕):**\n• H₂/He dominated, CH₄/NH₃ clouds",
+    "kz": "🌫️ **Экзопланета атмосфералары:**\n\n🪨 **Тасты (< 1.5 R⊕):** жұқа CO₂/N₂\n💨 **Мини-Нептундар:** H₂/He қабығы"
+  },
+  "travel": {
+    "ru": "🚀 **Межзвёздные путешествия:**\n\n**Proxima b (4.24 св.г.):**\n• Voyager (17 km/s): ~75,000 лет\n• 10% c: ~42 года\n• 50% c: ~8.5 лет\n\n**Технологии будущего:**\n• **Breakthrough Starshot** — лазерные паруса, 20% c\n• **Антиматерия** — теоретически до 90% c\n• **Warp drive** — искривление пространства (пока фантастика)\n\n⏰ **Дилатация времени:** при 90% c время на корабле течёт в 2.3× медленнее!",
+    "en": "🚀 **Interstellar travel:**\n\n**Proxima b (4.24 ly):**\n• Voyager (17 km/s): ~75,000 years\n• 10% c: ~42 years\n• 50% c: ~8.5 years\n\n**Future technologies:**\n• **Breakthrough Starshot** — laser sails, 20% c\n• **Antimatter** — theoretically up to 90% c\n• **Warp drive** — space curvature (still sci-fi)\n\n⏰ **Time dilation:** at 90% c, ship time flows 2.3× slower!",
+    "kz": "🚀 **Жұлдызаралық саяхат:**\n\n**Proxima b (4.24 ж.ж.):**\n• Voyager: ~75,000 жыл\n• 10% c: ~42 жыл"
+  },
+  "greeting": {
+    "ru": "👋 Привет! Я **ATLAS** — AI-ассистент ExoHunter.\n\nЯ помогу тебе исследовать экзопланеты, найти обитаемые миры и понять тайны Вселенной.\n\n💡 Спроси меня о:\n• Обитаемых планетах\n• Зоне HZ\n• Методах обнаружения\n• Конкретных экзопланетах",
+    "en": "👋 Hello! I'm **ATLAS** — ExoHunter's AI assistant.\n\nI'll help you explore exoplanets, find habitable worlds and understand the mysteries of the Universe.\n\n💡 Ask me about:\n• Habitable planets\n• Habitable zone\n• Detection methods\n• Specific exoplanets",
+    "kz": "👋 Сәлем! Мен **ATLAS** — ExoHunter AI-көмекшісі.\n\nМен сізге экзопланеталарды зерттеуге, мекендеуге жарамды әлемдерді табуға көмектесемін."
+  },
+  "help": {
+    "ru": "🛠️ **Чем я могу помочь:**\n\n🔍 **Поиск** — найди планеты по критериям\n📊 **Анализ** — оценю обитаемость, риски, атмосферу\n📚 **Обучение** — объясню любую тему\n🚀 **Миссии** — запущу автоматическое исследование\n\n**Примеры команд:**\n• «Какие планеты обитаемы?»\n• «Расскажи про TRAPPIST-1»\n• «Что такое зона HZ?»\n• «Запусти миссию»",
+    "en": "🛠️ **How I can help:**\n\n🔍 **Search** — find planets by criteria\n📊 **Analysis** — assess habitability, risks, atmosphere\n📚 **Learning** — explain any topic\n🚀 **Missions** — launch automatic research\n\n**Example commands:**\n• 'Which planets are habitable?'\n• 'Tell me about TRAPPIST-1'\n• 'What is habitable zone?'\n• 'Start mission'",
+    "kz": "🛠️ **Мен не істей аламын:**\n\n🔍 **Іздеу** — критерийлер бойынша планеталарды табу\n📊 **Талдау** — мекендеуге жарамдылықты бағалау"
+  },
+  "about": {
+    "ru": "🤖 Я **ATLAS** (Autonomous Terrestrial Life Analysis System) — AI-ассистент проекта ExoHunter.\n\n**Мои возможности:**\n• Поиск экзопланет в базе NASA\n• Анализ обитаемости и рисков\n• Визуализация звёздных систем\n• Автономные исследовательские миссии\n\nСоздан для поиска нового дома человечества среди звёзд. 🌌",
+    "en": "🤖 I'm **ATLAS** (Autonomous Terrestrial Life Analysis System) — AI assistant for the ExoHunter project.\n\n**My capabilities:**\n• Search exoplanets in NASA database\n• Analyze habitability and risks\n• Visualize star systems\n• Autonomous research missions\n\nCreated to find humanity's new home among the stars. 🌌",
+    "kz": "🤖 Мен **ATLAS** — ExoHunter жобасының AI-көмекшісі.\n\n**Менің мүмкіндіктерім:**\n• NASA базасынан экзопланеталарды іздеу\n• Мекендеуге жарамдылықты талдау"
+  }
+}

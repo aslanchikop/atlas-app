@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}About — ATLAS{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="scan-sweep"></div>
+
+  <div class="hud-status-strip">
+    <span class="hud-tag">ATLAS · Mission Profile</span>
+    <span class="hud-tag-sep"></span>
+    <span class="hud-tag">Diploma Project 2024–2025</span>
+    <span class="hud-tag-sep"></span>
+    <span style="display:flex;align-items:center;gap:6px"><span class="status-dot"></span><span class="hud-tag">NASA Exoplanet Archive</span></span>
+  </div>
+
+  <div class="page-header reveal">
+    <div>
+      <p class="page-subtitle-hud">{% if lang == 'en' %}Mission Profile{% else %}Миссия Профилі{% endif %}</p>
+      <h1 class="page-title">{% if lang == 'en' %}About ATLAS{% else %}ATLAS туралы{% endif %}</h1>
+      <p class="page-subtitle">{% if lang == 'en' %}Diploma project 2024–2025 · Powered by NASA Exoplanet Archive{% else %}Диплом жобасы 2024–2025 · NASA Экзопланета мұрағатымен жұмыс істейді{% endif %}</p>
+    </div>
+  </div>
+
+  <!-- ── Research Profile Hero ── -->
+  <div class="glass reveal" style="margin-bottom:1.5rem;padding:28px 32px;">
+    <div class="hud-panel-br"></div>
+    <div class="profile-hero">
+      <div class="profile-avatar">🛰️</div>
+      <div>
+        <div class="profile-rank">{% if lang == 'en' %}Chief Exoplanet Researcher · ATLAS v21{% else %}Бас Экзопланета Зерттеушісі · ATLAS v21{% endif %}</div>
+        <div class="profile-name">{% if lang == 'en' %}Research Profile{% else %}Зерттеу Профилі{% endif %}</div>
+        <div class="profile-stats-row">
+          <div class="profile-stat"><div class="profile-stat-val">{{ stats.systems }}</div><div class="profile-stat-label">{% if lang == 'en' %}Systems{% else %}Жүйелер{% endif %}</div></div>
+          <div class="profile-stat"><div class="profile-stat-val">{{ stats.planets }}</div><div class="profile-stat-label">{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %}</div></div>
+          <div class="profile-stat"><div class="profile-stat-val" style="color:var(--green)">{{ stats.habitable }}</div><div class="profile-stat-label">{% if lang == 'en' %}Habitable{% else %}Тіршілік{% endif %}</div></div>
+          <div class="profile-stat"><div class="profile-stat-val" style="color:var(--accent)">{{ stats.chat_count }}</div><div class="profile-stat-label">{% if lang == 'en' %}AI Queries{% else %}Сұраулар{% endif %}</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- Progress rings -->
+    <div class="accent-rule"></div>
+    <div class="ring-progress-wrap" id="progressRings">
+      <div class="ring-item">
+        <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="ring-track" cx="36" cy="36" r="30" stroke-width="4"/>
+          <circle class="ring-fill" cx="36" cy="36" r="30" stroke-width="4"
+                  stroke-dasharray="188.5"
+                  stroke-dashoffset="{{ 188.5 - (188.5 * [stats.systems / 15, 1]|min) }}"
+                  id="ring-nearby"/>
+        </svg>
+        <div class="ring-value">{{ stats.systems }}/15</div>
+        <div class="ring-label">{% if lang == 'en' %}Nearby Stars{% else %}Жақын Жұлдыздар{% endif %}</div>
+      </div>
+      <div class="ring-item">
+        <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="ring-track" cx="36" cy="36" r="30" stroke-width="4"/>
+          <circle class="ring-fill" cx="36" cy="36" r="30" stroke-width="4"
+                  stroke-dasharray="188.5" stroke="var(--blue)"
+                  stroke-dashoffset="{{ 188.5 - (188.5 * [stats.planets / 50, 1]|min) }}"
+                  id="ring-planets"/>
+        </svg>
+        <div class="ring-value">{{ stats.planets }}/50</div>
+        <div class="ring-label">{% if lang == 'en' %}Planets Found{% else %}Табылған Планеталар{% endif %}</div>
+      </div>
+      <div class="ring-item">
+        <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="ring-track" cx="36" cy="36" r="30" stroke-width="4"/>
+          <circle class="ring-fill" cx="36" cy="36" r="30" stroke-width="4"
+                  stroke-dasharray="188.5" stroke="var(--green)"
+                  stroke-dashoffset="{{ 188.5 - (188.5 * [stats.habitable / 10, 1]|min) }}"
+                  id="ring-habitable"/>
+        </svg>
+        <div class="ring-value">{{ stats.habitable }}/10</div>
+        <div class="ring-label">{% if lang == 'en' %}HZ Planets{% else %}ТА Планеталары{% endif %}</div>
+      </div>
+      <div class="ring-item">
+        <svg class="ring-svg" width="72" height="72" viewBox="0 0 72 72">
+          <circle class="ring-track" cx="36" cy="36" r="30" stroke-width="4"/>
+          <circle class="ring-fill" cx="36" cy="36" r="30" stroke-width="4"
+                  stroke-dasharray="188.5" stroke="var(--purple)"
+                  stroke-dashoffset="{{ 188.5 - (188.5 * [stats.chat_count / 20, 1]|min) }}"
+                  id="ring-chat"/>
+        </svg>
+        <div class="ring-value">{{ stats.chat_count }}/20</div>
+        <div class="ring-label">{% if lang == 'en' %}AI Chats{% else %}ЖИ Чаттары{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Mission statement ── -->
+  <div class="glass glass-inner-glow reveal" style="margin-bottom:1.5rem;padding:2.5rem;">
+    <div class="about-mission">
+      <div class="about-mission-icon">🛰️</div>
+      <div>
+        <h2 style="margin-bottom:.75rem;">
+          {% if lang == 'en' %}What is ATLAS?{% else %}ATLAS дегеніміз не?{% endif %}
+        </h2>
+        <p style="line-height:1.8;color:var(--text-secondary);max-width:720px;">
+          {% if lang == 'en' %}
+          ATLAS (Autonomous Terrestrial Life Analysis System) is an intelligent research platform that
+          queries the NASA Exoplanet Archive in real time, applies machine-learning habitability models,
+          and generates scientific insights — all within a beautiful, interactive interface. Built as a
+          diploma project to demonstrate the fusion of data science, astrophysics, and modern web design.
+          {% else %}
+          ATLAS (Автономды Жердегі Тіршілікті Талдау Жүйесі) — NASA Экзопланета мұрағатынан нақты
+          уақытта деректерді сұрайтын, машиналық оқуға негізделген тіршілік қабілеттілігі үлгілерін
+          қолданатын және ғылыми түсініктер беретін зерттеу платформасы. Деректер ғылымы, астрофизика
+          және заманауи веб-дизайнның синтезін көрсету үшін диплом жобасы ретінде жасалды.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Progress stats ── -->
+  <div class="bento-4 reveal" style="margin-bottom:2rem;">
+    <div class="glass glass-inner-glow stat-card">
+      <div class="stat-card-icon">🌌</div>
+      <div class="stat-card-value counter" data-target="{{ stats.systems }}">{{ stats.systems }}</div>
+      <div class="stat-card-label">{% if lang == 'en' %}Systems Scanned{% else %}Сканерленген жүйелер{% endif %}</div>
+    </div>
+    <div class="glass glass-inner-glow stat-card">
+      <div class="stat-card-icon">🌍</div>
+      <div class="stat-card-value counter" data-target="{{ stats.planets }}">{{ stats.planets }}</div>
+      <div class="stat-card-label">{% if lang == 'en' %}Planets Analyzed{% else %}Талданған планеталар{% endif %}</div>
+    </div>
+    <div class="glass glass-inner-glow stat-card">
+      <div class="stat-card-icon">💚</div>
+      <div class="stat-card-value counter" data-target="{{ stats.habitable }}">{{ stats.habitable }}</div>
+      <div class="stat-card-label">{% if lang == 'en' %}Habitable Worlds{% else %}Тіршілік планеталары{% endif %}</div>
+    </div>
+    <div class="glass glass-inner-glow stat-card">
+      <div class="stat-card-icon">💬</div>
+      <div class="stat-card-value counter" data-target="{{ stats.chat_count }}">{{ stats.chat_count }}</div>
+      <div class="stat-card-label">{% if lang == 'en' %}AI Queries{% else %}ЖИ сұраулары{% endif %}</div>
+    </div>
+  </div>
+
+  <!-- ── Achievements ── -->
+  <div class="glass glass-inner-glow reveal" style="margin-bottom:2rem;">
+    <div class="card-header">
+      <span class="card-icon">🏆</span>
+      <h3>{% if lang == 'en' %}Achievements{% else %}Жетістіктер{% endif %}</h3>
+      <span class="muted-text" style="margin-left:auto;font-size:.85rem;">
+        {{ achievements|selectattr('unlocked')|list|length }}/{{ achievements|length }}
+        {% if lang == 'en' %}unlocked{% else %}ашылды{% endif %}
+      </span>
+    </div>
+
+    <!-- Progress bar -->
+    {% set unlocked_pct = (achievements|selectattr('unlocked')|list|length / achievements|length * 100)|int if achievements else 0 %}
+    <div class="achievement-progress-wrap" style="margin-bottom:1.5rem;">
+      <div class="score-bar-track" style="height:8px;">
+        <div class="score-bar-fill" style="width:{{ unlocked_pct }}%;background:linear-gradient(90deg,var(--accent),var(--accent-light));"></div>
+      </div>
+    </div>
+
+    <div class="achievement-grid">
+      {% for ach in achievements %}
+      <div class="achievement-card glass hoverable {% if not ach.unlocked %}locked{% endif %}"
+           title="{{ ach.description[lang] if ach.description is mapping else ach.description }}">
+        <div class="ach-icon">{{ ach.icon }}</div>
+        <div class="ach-name">{{ ach.name[lang] if ach.name is mapping else ach.name }}</div>
+        <div class="ach-desc muted-text">{{ ach.description[lang] if ach.description is mapping else ach.description }}</div>
+        {% if ach.unlocked %}
+        <div class="ach-badge">✓</div>
+        {% else %}
+        <div class="ach-lock">🔒</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Tech stack ── -->
+  <div class="bento-2 reveal" style="align-items:start;gap:1.5rem;margin-bottom:2rem;">
+    <div class="glass glass-inner-glow">
+      <div class="card-header">
+        <span class="card-icon">⚙️</span>
+        <h3>{% if lang == 'en' %}Tech Stack{% else %}Технологиялар{% endif %}</h3>
+      </div>
+      <div class="tech-list">
+        {% set techs = [
+          ('🐍', 'Python 3', 'Flask · NumPy · Scikit-learn · Joblib'),
+          ('🌐', 'Frontend', 'Jinja2 · Vanilla JS · CSS3 Glassmorphism'),
+          ('📡', 'Data Source', 'NASA Exoplanet Archive TAP API'),
+          ('📊', 'Charts', 'Plotly.js · Custom Canvas Particles'),
+          ('🤖', 'ML Models', 'Habitability Classifier · NLP Chatbot'),
+          ('🎨', 'Design', 'Space Grotesk · Inter · Bento Grid'),
+        ] %}
+        {% for icon, name, detail in techs %}
+        <div class="tech-row glass hoverable">
+          <span class="tech-icon">{{ icon }}</span>
+          <div>
+            <div class="tech-name">{{ name }}</div>
+            <div class="tech-detail muted-text">{{ detail }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="glass glass-inner-glow">
+      <div class="card-header">
+        <span class="card-icon">📖</span>
+        <h3>{% if lang == 'en' %}Features{% else %}Мүмкіндіктер{% endif %}</h3>
+      </div>
+      <div class="feature-list">
+        {% set features = [
+          ('🔭', 'Real-time exoplanet data via NASA TAP', 'NASA TAP арқылы нақты уақытта деректер'),
+          ('🧬', 'ML-based habitability scoring', 'ML негізіндегі тіршілік ұпайы'),
+          ('🗺️', '3D interactive star maps & system views', '3D интерактивті жұлдыз карталары'),
+          ('⚡', 'Relativistic travel simulator', 'Релятивистік саяхат симуляторы'),
+          ('🤖', 'AI chatbot for space Q&A', 'Ғарыш сұрақтарына арналған ЖИ'),
+          ('🌐', 'Bilingual EN / KZ interface', 'EN / KZ екітілді интерфейс'),
+          ('📊', 'Multi-planet comparison & radar charts', 'Планеталар салыстырмасы'),
+          ('📚', 'Built-in scientific encyclopedia', 'Кіріктірілген ғылыми энциклопедия'),
+        ] %}
+        {% for icon, en_text, kz_text in features %}
+        <div class="feature-row">
+          <span class="feature-icon">{{ icon }}</span>
+          <span>{% if lang == 'en' %}{{ en_text }}{% else %}{{ kz_text }}{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Data attribution ── -->
+  <div class="glass reveal" style="text-align:center;padding:2rem;margin-bottom:2rem;">
+    <p class="muted-text" style="font-size:.9rem;line-height:1.8;">
+      {% if lang == 'en' %}
+      Data sourced from the <strong style="color:var(--accent);">NASA Exoplanet Archive</strong>
+      via the Table Access Protocol (TAP) service. ATLAS is a non-commercial educational project.
+      {% else %}
+      Деректер Table Access Protocol (TAP) қызметі арқылы
+      <strong style="color:var(--accent);">NASA Экзопланета мұрағатынан</strong> алынған.
+      ATLAS — коммерциялық емес оқу жобасы.
+      {% endif %}
+    </p>
+  </div>
+
+</div>
+{% endblock %}
