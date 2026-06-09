@@ -91,8 +91,6 @@
   {% block footer %}
   <footer class="footer">
     <div class="footer-logo">🛰️ ATLAS</div>
-    <p>{% if lang == 'en' %}Autonomous Terrestrial Life Analysis System{% else %}Автономды Жердегі Тіршілікті Талдау Жүйесі{% endif %}</p>
-    <p style="margin-top:4px;">{% if lang == 'en' %}Diploma Project 2024–2025 · Powered by NASA Exoplanet Archive{% else %}Диплом жобасы 2024–2025 · NASA Экзопланета мұрағатымен жұмыс істейді{% endif %}</p>
   </footer>
   {% endblock %}
 
@@ -281,6 +279,7 @@
 <!-- ── Laika — Space Dog Mascot ─────────────────────────── -->
 <div class="lk-wrap" id="laikaWrap" title="Click to chat with Laika 🐾">
   <div class="lk-bubble" id="laikaBubble"></div>
+  <div class="lk-visual" id="laikaVisual">
     <div class="lk-dog" id="laikaDog">
       <svg viewBox="0 0 100 100" class="lk-svg-dog" width="108" height="108">
         <defs>
@@ -1121,41 +1120,55 @@
     const url = typeof args[0] === 'string' ? args[0] : '';
     const p = _f.apply(this, args);
     const cur = getCurrent();
-    if (cur && (url.includes('/api/scan') || url.includes('/api/achievement') || url.includes('/api/travel'))) {
+    const mutatingEndpoints = [
+      '/api/scan', '/api/chat', '/api/travel', 
+      '/api/add-compare', '/api/clear-compare', 
+      '/api/delete-system', '/api/select-planet', '/api/login'
+    ];
+    const isMutation = mutatingEndpoints.some(ep => url.includes(ep));
+    if (cur && isMutation) {
       p.then(() => saveProgress(cur)).catch(() => {});
     }
     return p;
   };
-
-  window.addEventListener('beforeunload', () => {
-    const cur = getCurrent();
-    if (cur) {
-      navigator.sendBeacon && navigator.sendBeacon('/api/get-state');
-      saveProgress(cur);
-    }
-  });
 
   // ── Auto-restore on page load if server state was lost ────
   (async function autoRestore() {
     const cur = getCurrent();
     if (!cur) return;
     const localData = getUserData(cur);
-    if (!localData || !Object.keys(localData.systems || {}).length) return;
+    if (!localData) return;
+
+    // Check if this page load is a result of a restore reload to prevent loops
+    const reloaded = sessionStorage.getItem('_atlas_restored');
+    if (reloaded) {
+      sessionStorage.removeItem('_atlas_restored');
+      return;
+    }
+
     try {
       const r = await fetch('/api/get-state');
       const srv = await r.json();
-      if (!Object.keys(srv.systems || {}).length) {
+      
+      // Determine if server state is empty (restore needed)
+      const serverEmpty = !Object.keys(srv.systems || {}).length && 
+                          !srv.chat?.length && 
+                          !srv.laika_chat?.length && 
+                          !Object.keys(srv.achievements || {}).length;
+                          
+      const localHasData = Object.keys(localData.systems || {}).length || 
+                           localData.chat?.length || 
+                           localData.laika_chat?.length || 
+                           Object.keys(localData.achievements || {}).length;
+
+      if (serverEmpty && localHasData) {
         // Server lost state (restart) — restore silently then reload once
-        const reloaded = sessionStorage.getItem('_atlas_restored');
-        if (reloaded) return;
         await fetch('/api/login', {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ username: cur, state: localData })
         });
         sessionStorage.setItem('_atlas_restored', '1');
         window.location.reload();
-      } else {
-        sessionStorage.removeItem('_atlas_restored');
       }
     } catch {}
   })();
