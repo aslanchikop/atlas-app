@@ -113,6 +113,7 @@ function showToast(message, type = 'info', duration = 5000) {
   setTimeout(() => {
     toast.classList.remove('toast-show');
     toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 600);
   }, duration);
 }
 
@@ -239,6 +240,7 @@ window.debounce     = debounce;
     setTimeout(() => {
       toast.classList.remove('toast-show');
       toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 600);
     }, 5000);
   }
 
