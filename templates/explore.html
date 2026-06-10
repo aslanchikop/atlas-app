@@ -7,13 +7,13 @@
 
   <!-- HUD status strip -->
   <div class="hud-status-strip">
-    <span class="hud-tag">ATLAS · Explore Module</span>
+    <span class="hud-tag">ATLAS · {% if lang == 'en' %}Explore Module{% else %}Зерттеу модулі{% endif %}</span>
     <span class="hud-tag-sep"></span>
-    <span class="hud-tag">Systems: <span id="hdr-systems" style="color:var(--accent)">{{ systems|length }}</span></span>
+    <span class="hud-tag">{% if lang == 'en' %}Systems{% else %}Жүйелер{% endif %}: <span id="hdr-systems" style="color:var(--accent)">{{ systems|length }}</span></span>
     <span class="hud-tag-sep"></span>
-    <span class="hud-tag">Planets: <span id="hdr-planets" style="color:var(--accent)">{{ systems.values()|sum(attribute='planet_count') if systems else 0 }}</span></span>
+    <span class="hud-tag">{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %}: <span id="hdr-planets" style="color:var(--accent)">{{ systems.values()|sum(attribute='planet_count') if systems else 0 }}</span></span>
     <span class="hud-tag-sep"></span>
-    <span style="display:flex;align-items:center;gap:6px"><span class="status-dot"></span><span class="hud-tag">Live</span></span>
+    <span style="display:flex;align-items:center;gap:6px"><span class="status-dot"></span><span class="hud-tag">{% if lang == 'en' %}Live{% else %}Тікелей{% endif %}</span></span>
   </div>
 
   <!-- Page Header with quick stats -->
@@ -236,7 +236,7 @@
               </div>
               {% endfor %}
               {% if current_planets|length > 6 %}
-              <div style="display:flex;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);color:var(--text-faint);font-size:0.72rem">+{{ current_planets|length - 6 }} more</div>
+              <div style="display:flex;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);color:var(--text-faint);font-size:0.72rem">+{{ current_planets|length - 6 }} {% if lang == 'en' %}more{% else %}тағы да{% endif %}</div>
               {% endif %}
             </div>
             {% endif %}
@@ -264,7 +264,7 @@
                   <span style="font-size:0.95rem">🌟</span>
                   <div style="flex:1;min-width:0">
                     <div style="font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ hostname }}</div>
-                    <div style="font-size:0.68rem;color:var(--text-faint)">{{ data.planet_count }} planets · {{ "%.1f"|format(data.distance) if data.distance else '?' }} ly</div>
+                    <div style="font-size:0.68rem;color:var(--text-faint)">{{ data.planet_count }} {% if lang == 'en' %}planets{% else %}планета{% endif %} · {{ "%.1f"|format(data.distance) if data.distance else '?' }} ly</div>
                   </div>
                   <div style="font-size:0.85rem;font-weight:700;color:{{ sc_color }}">{{ sc }}</div>
                 </div>
@@ -344,16 +344,16 @@
       </div>
       <div class="glass metric-card">
         <div class="m-value">{{ "%.1f"|format(current_star.distance) if current_star and current_star.distance else '?' }} ly</div>
-        <div class="m-label">📍 Distance</div>
+        <div class="m-label">📍 {% if lang == 'en' %}Distance{% else %}Қашықтық{% endif %}</div>
       </div>
     </div>
 
     <!-- 3D System chart -->
     <div class="glass p-16 reveal mb-16">
-      <div class="section-title">{{ current_system or 'System View' }} — 3D Orbital Map</div>
+      <div class="section-title">{{ current_system or ('System View' if lang == 'en' else 'Жүйе көрінісі') }} — {% if lang == 'en' %}3D Orbital Map{% else %}3D Орбиталық карта{% endif %}</div>
       <div class="chart-wrap" id="systemChartWrap">
         <div class="chart-loading" id="systemChartLoading">
-          <div class="spinner"></div><span>Loading visualization…</span>
+          <div class="spinner"></div><span>{% if lang == 'en' %}Loading visualization…{% else %}Визуализация жүктелуде…{% endif %}</span>
         </div>
         <div id="systemChart"></div>
       </div>
@@ -361,7 +361,7 @@
 
     <!-- Planet cards -->
     <div class="glass p-20 reveal mb-16">
-      <div class="section-title">Planets ({{ current_planets|length }})</div>
+      <div class="section-title">{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %} ({{ current_planets|length }})</div>
       <div class="planets-grid" id="planetCardsGrid">
         {% for planet in current_planets %}
         {% set score = planet.hab_score %}
@@ -641,7 +641,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Velocity — <span id="velLabel">20% c</span></label>
+          <label class="form-label">{% if lang == 'en' %}Velocity{% else %}Жылдамдық{% endif %} — <span id="velLabel">20% c</span></label>
           <input type="range" class="range-slider" id="velocitySlider"
                  min="1" max="99" value="20" oninput="updateVelLabel();updateTravelCalc()">
         </div>
@@ -735,20 +735,30 @@
         {% for hostname, data in systems.items()|sort(attribute='1.best_score', reverse=True) %}
         {% set sc = data.best_score %}
         {% set sc_color = '#7cb97c' if sc >= 70 else ('#00d4ff' if sc >= 50 else ('#d4a574' if sc >= 30 else '#f87171')) %}
+        {% set safeName = hostname.replace(' ', '_').replace('-', '_') %}
         <div class="glass system-row hoverable" data-name="{{ hostname }}" data-score="{{ sc }}"
              data-date="{{ data.timestamp }}" data-planets="{{ data.planet_count }}"
              data-distance="{{ data.distance or 9999 }}">
           <div>
             <div class="sys-name">🌟 {{ hostname }}</div>
-            <div class="sys-meta">{{ data.timestamp }} · {{ "%.1f"|format(data.distance) if data.distance else '?' }} ly</div>
+            <div class="sys-meta">{{ data.planet_count }} {% if lang == 'en' %}planets{% else %}планета{% endif %} · {{ "%.1f"|format(data.distance) if data.distance else '?' }} {% if lang == 'en' %}ly{% else %}ж.ж.{% endif %} · {{ data.timestamp }}</div>
           </div>
-          <div>
-            <span class="badge badge-info">{{ data.planet_count }} planets</span>
-            {% if data.habitable_count %}<span class="badge badge-success ml-4">{{ data.habitable_count }} habitable</span>{% endif %}
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="badge badge-info">{{ data.planet_count }} {% if lang == 'en' %}planets{% else %}планета{% endif %}</span>
+            {% if data.habitable_count %}<span class="badge badge-success">{{ data.habitable_count }} {% if lang == 'en' %}HZ{% else %}МЖА{% endif %}</span>{% endif %}
           </div>
           <div class="sys-score" style="color:{{ sc_color }}">{{ sc }}<span class="text-faint text-xs">/100</span></div>
-          <button class="btn btn-secondary btn-sm" onclick="loadSystem('{{ hostname }}')">Load</button>
-          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSystem('{{ hostname }}', this)" title="Delete">✕</button>
+          <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
+            <button class="btn btn-secondary btn-sm" style="gap:4px" onclick="toggleStarAI('{{ hostname }}', this)">✨ AI</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadSystem('{{ hostname }}')">{% if lang == 'en' %}Load{% else %}Жүктеу{% endif %}</button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSystem('{{ hostname }}', this)" title="{% if lang == 'en' %}Delete{% else %}Өшіру{% endif %}">✕</button>
+          </div>
+        </div>
+        <div id="starai-{{ safeName }}" style="display:none;padding:10px 16px 14px;margin-top:-6px;
+             background:rgba(212,165,116,0.04);border:1px solid rgba(212,165,116,0.18);
+             border-top:none;border-radius:0 0 10px 10px;margin-bottom:8px">
+          <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:6px">✨ ATLAS AI · {% if lang == 'en' %}System Profile{% else %}Жүйе профилі{% endif %}</div>
+          <div class="starai-text-{{ safeName }}" style="font-size:0.78rem;color:var(--text-muted);line-height:1.6">…</div>
         </div>
         {% endfor %}
       </div>
@@ -855,9 +865,9 @@
       <div class="glass hoverable news-card" data-category="jwst research" style="grid-column:span 2;padding:28px;position:relative;overflow:hidden;min-height:200px">
         <div style="position:absolute;top:0;right:0;bottom:0;width:40%;background:radial-gradient(ellipse at right,rgba(212,165,116,0.08),transparent);pointer-events:none"></div>
         <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-          <span class="badge badge-accent">Featured</span>
+          <span class="badge badge-accent">{% if lang == 'en' %}Featured{% else %}Ұсынылған{% endif %}</span>
           <span class="badge badge-info">JWST</span>
-          <span class="badge" style="background:rgba(124,185,124,0.15);color:var(--green);border:1px solid rgba(124,185,124,0.3)">Research</span>
+          <span class="badge" style="background:rgba(124,185,124,0.15);color:var(--green);border:1px solid rgba(124,185,124,0.3)">{% if lang == 'en' %}Research{% else %}Зерттеу{% endif %}</span>
         </div>
         <h3 class="news-title" style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.3"
           data-en="K2-18b: Carbon Dioxide and Methane Confirmed — Possible Hycean World"
@@ -866,18 +876,18 @@
           data-en="The James Webb Space Telescope has confirmed the presence of carbon dioxide and methane in the atmosphere of K2-18b, a sub-Neptune exoplanet 124 light-years away in the Leo constellation. Scientists at Cambridge University propose this could indicate a &quot;Hycean world&quot; — a planet with a hydrogen-rich atmosphere and a vast liquid water ocean beneath. The discovery marks the first time potential biosignature-adjacent molecules have been detected on a planet orbiting in the habitable zone of its star."
           data-kz="Джеймс Вебб ғарыштық телескопы Лев шоқжұлдызынан 124 жарық жылдай қашықтықта орналасқан K2-18b суб-Нептун экзопланетасының атмосферасында көмірқышқыл газы мен метанның бар екенін растады. Кембридж университетінің ғалымдары бұл сутегіге бай атмосфера мен астындағы кең сұйық су мұхиты бар «Гидрлі әлем» екенін білдіруі мүмкін деп болжайды. Жаңалық тіршілік аймағында орбита жасайтын планетада биосигнатураға жақын молекулалардың алғаш рет анықталуы болды.">The James Webb Space Telescope has confirmed the presence of carbon dioxide and methane in the atmosphere of K2-18b, a sub-Neptune exoplanet 124 light-years away in the Leo constellation. Scientists at Cambridge University propose this could indicate a "Hycean world" — a planet with a hydrogen-rich atmosphere and a vast liquid water ocean beneath. The discovery marks the first time potential biosignature-adjacent molecules have been detected on a planet orbiting in the habitable zone of its star.</p>
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-          <span style="font-size:0.72rem;color:var(--text-faint)">September 2023 · Updated 2025</span>
+          <span style="font-size:0.72rem;color:var(--text-faint)">{% if lang == 'en' %}September 2023 · Updated 2025{% else %}Қыркүйек 2023 · Жаңартылды 2025{% endif %}</span>
           <span style="font-size:0.72rem;color:var(--text-faint)">·</span>
           <span style="font-size:0.72rem;color:var(--accent)">NASA / ESA / Cambridge</span>
           <span style="font-size:0.72rem;color:var(--text-faint)">·</span>
-          <span style="font-size:0.72rem;color:var(--text-faint)">124 ly · Leo constellation</span>
+          <span style="font-size:0.72rem;color:var(--text-faint)">124 {% if lang == 'en' %}ly{% else %}ж.ж.{% endif %} · {% if lang == 'en' %}Leo constellation{% else %}Лев шоқжұлдызы{% endif %}</span>
         </div>
       </div>
 
       <!-- Normal card -->
       <div class="glass hoverable news-card" data-category="discovery mission" style="padding:22px">
         <div style="margin-bottom:12px;display:flex;gap:6px">
-          <span class="badge badge-success">Discovery</span>
+          <span class="badge badge-success">{% if lang == 'en' %}Discovery{% else %}Ашылым{% endif %}</span>
           <span class="badge" style="background:rgba(0,212,255,0.1);color:var(--blue);border:1px solid rgba(0,212,255,0.25)">TESS</span>
         </div>
         <h4 class="news-title" style="font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
@@ -885,9 +895,9 @@
           data-kz="TOI-700e: Тіршілік аймағындағы екінші Жер мөлшеріндегі планета расталды">TOI-700e: Second Earth-Sized Planet Confirmed in Habitable Zone</h4>
         <p class="news-body" style="font-size:0.78rem;color:var(--text-muted);line-height:1.55;margin-bottom:14px"
           data-en="TESS confirms a second Earth-sized rocky planet in the habitable zone of TOI-700, a cool M-dwarf star 101 light-years away in the Dorado constellation. TOI-700e orbits its star every 28 days and joins sibling TOI-700d as a rare multi-planet habitable-zone system."
-          data-kz="TESS Дорадо шоқжұлдызынан 101 жарық жылдай қашықтағы TOI-700 суық M-карлик жұлдызының тіршілік аймағындағы екінші Жер мөлшеріндегі тасты планетаны растады. TOI-700e жұлдызын 28 күнде бір орайды және сирек кездесетін көп планеталы тіршілік аймағы жүйесі ретінде TOI-700d-мен бірге орналасқан.">TESS confirms a second Earth-sized rocky planet in the habitable zone of TOI-700, a cool M-dwarf star 101 light-years away in the Dorado constellation. TOI-700e orbits its star every 28 days and joins sibling TOI-700d as a rare multi-planet habitable-zone system.</p>
+          data-kz="TESS Дорадо шоқжұлдызынан 101 жарық жылдай қашықтағы TOI-700 суық M-карлик жұлдызының тіршілік аймағындағы екінші Жер мөлшеріндегі тасты планетаны растады. TOI-700e жұлдызын 28 күнде один орайды және сирек кездесетін көп планеталы тіршілік аймағы жүйесі ретінде TOI-700d-мен бірге орналасқан.">TESS confirms a second Earth-sized rocky planet in the habitable zone of TOI-700, a cool M-dwarf star 101 light-years away in the Dorado constellation. TOI-700e orbits its star every 28 days and joins sibling TOI-700d as a rare multi-planet habitable-zone system.</p>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:0.70rem;color:var(--text-faint)">Jan 2023 · TESS Mission</span>
+          <span style="font-size:0.70rem;color:var(--text-faint)">{% if lang == 'en' %}Jan 2023 · TESS Mission{% else %}Қаң 2023 · TESS миссиясы{% endif %}</span>
           <span style="font-size:0.70rem;padding:3px 8px;background:rgba(124,185,124,0.12);color:var(--green);border-radius:6px;border:1px solid rgba(124,185,124,0.2)">ESI 0.82</span>
         </div>
       </div>
@@ -898,26 +908,26 @@
 
       <div class="glass hoverable news-card" data-category="research discovery" style="padding:20px">
         <div style="font-size:1.8rem;margin-bottom:10px">🪐</div>
-        <div style="margin-bottom:10px"><span class="badge badge-info">Research</span></div>
+        <div style="margin-bottom:10px"><span class="badge badge-info">{% if lang == 'en' %}Research{% else %}Зерттеу{% endif %}</span></div>
         <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
           data-en="TRAPPIST-1: Rocky Planets Confirmed Bone-Dry or Water-Rich"
           data-kz="TRAPPIST-1: Тасты планеталар не мүлде құрғақ, не суға бай">TRAPPIST-1: Rocky Planets Confirmed Bone-Dry or Water-Rich</h4>
         <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
           data-en="New JWST thermal emission data shows TRAPPIST-1b and 1c likely have no thick atmosphere, while inner planets may harbor significant water beneath rocky crusts. Observations of the outer planets 1e, 1f, and 1g continue to show promise for habitability."
           data-kz="Жаңа JWST термиялық сәулелену деректері TRAPPIST-1b мен 1c планеталарында қалың атмосфера жоқ екенін көрсетеді, ал ішкі планеталарда тасты қабат астында елеулі су болуы мүмкін. Сыртқы 1e, 1f және 1g планеталарын бақылау тіршілікке жарамдылық жағынан үміт беруде.">New JWST thermal emission data shows TRAPPIST-1b and 1c likely have no thick atmosphere, while inner planets may harbor significant water beneath rocky crusts. Observations of the outer planets 1e, 1f, and 1g continue to show promise for habitability.</p>
-        <div style="font-size:0.68rem;color:var(--text-faint)">March 2024 · JWST / Spitzer</div>
+        <div style="font-size:0.68rem;color:var(--text-faint)">{% if lang == 'en' %}March 2024 · JWST / Spitzer{% else %}Наурыз 2024 · JWST / Spitzer{% endif %}</div>
       </div>
 
       <div class="glass hoverable news-card" data-category="research" style="padding:20px">
         <div style="font-size:1.8rem;margin-bottom:10px">🌍</div>
-        <div style="margin-bottom:10px"><span class="badge badge-accent">Research</span></div>
+        <div style="margin-bottom:10px"><span class="badge badge-accent">{% if lang == 'en' %}Research{% else %}Зерттеу{% endif %}</span></div>
         <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
           data-en="Kepler-442b: ML Models Push Habitability Score to 91/100"
           data-kz="Kepler-442b: МО модельдері тіршілікке жарамдылық ұпайын 91/100-ге жеткізді">Kepler-442b: ML Models Push Habitability Score to 91/100</h4>
         <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
           data-en="Updated machine learning habitability models incorporating new spectroscopic data place Kepler-442b among the top five most Earth-like worlds known. The planet orbits a K-type star 1,200 ly away with an orbital period of 112.3 days."
           data-kz="Жаңа спектроскопиялық деректерді қамтыған жаңартылған машиналық оқыту тіршілікке жарамдылық модельдері Kepler-442b-ні белгілі ең Жерге ұқсас бес әлемнің қатарына қойды. Планета 1200 жарық жыл қашықтықтағы K-типті жұлдызды 112,3 күнде бір орайды.">Updated machine learning habitability models incorporating new spectroscopic data place Kepler-442b among the top five most Earth-like worlds known. The planet orbits a K-type star 1,200 ly away with an orbital period of 112.3 days.</p>
-        <div style="font-size:0.68rem;color:var(--text-faint)">Nov 2024 · Kepler Archive / AI</div>
+        <div style="font-size:0.68rem;color:var(--text-faint)">{% if lang == 'en' %}Nov 2024 · Kepler Archive / AI{% else %}Қар 2024 · Kepler мұрағаты / ЖИ{% endif %}</div>
       </div>
 
       <div class="glass hoverable news-card" data-category="research jwst" style="padding:20px">
@@ -931,19 +941,19 @@
         <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
           data-en="JWST transmission spectroscopy of LHS 1140b, a super-Earth 49 light-years away, reveals a tentative water vapor signal in its atmosphere. If confirmed, this would make LHS 1140b one of the most compelling ocean-world candidates in the nearby stellar neighborhood."
           data-kz="49 жарық жыл қашықтықтағы LHS 1140b суперже-жерінің JWST трансмиссиялық спектроскопиясы оның атмосферасында су буының шартты сигналын ашты. Расталса, LHS 1140b жақын маңдағы ең тартымды мұхит-әлем кандидаттарының бірі болады.">JWST transmission spectroscopy of LHS 1140b, a super-Earth 49 light-years away, reveals a tentative water vapor signal in its atmosphere. If confirmed, this would make LHS 1140b one of the most compelling ocean-world candidates in the nearby stellar neighborhood.</p>
-        <div style="font-size:0.68rem;color:var(--text-faint)">July 2024 · JWST / STScI</div>
+        <div style="font-size:0.68rem;color:var(--text-faint)">{% if lang == 'en' %}July 2024 · JWST / STScI{% else %}Шілде 2024 · JWST / STScI{% endif %}</div>
       </div>
 
       <div class="glass hoverable news-card" data-category="research discovery" style="padding:20px">
         <div style="font-size:1.8rem;margin-bottom:10px">🌑</div>
-        <div style="margin-bottom:10px"><span class="badge badge-danger">Research</span></div>
+        <div style="margin-bottom:10px"><span class="badge badge-danger">{% if lang == 'en' %}Research{% else %}Зерттеу{% endif %}</span></div>
         <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
           data-en="Proxima Centauri b: Tidal Locking Analysis Revisited"
           data-kz="Proxima Centauri b: Толқындық бекіту талдауы қайта қаралды">Proxima Centauri b: Tidal Locking Analysis Revisited</h4>
         <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
           data-en="New atmospheric circulation models suggest that even a tidally-locked Proxima Centauri b could sustain a stable climate if it possesses a thick enough atmosphere. Temperatures on the day-side terminator could allow liquid water, reviving interest in the nearest exoplanet."
           data-kz="Жаңа атмосфералық айналым модельдері толқындық бекітілген Proxima Centauri b да жеткілікті қалың атмосферасы болса тұрақты климатты сақтай алатынын болжайды. Күндізгі жиекте температура сұйық суға мүмкіндік беруі мүмкін, бұл ең жақын экзопланетаға деген қызығушылықты қайта оятты.">New atmospheric circulation models suggest that even a tidally-locked Proxima Centauri b could sustain a stable climate if it possesses a thick enough atmosphere. Temperatures on the day-side terminator could allow liquid water, reviving interest in the nearest exoplanet.</p>
-        <div style="font-size:0.68rem;color:var(--text-faint)">Dec 2024 · ESO / Nature</div>
+        <div style="font-size:0.68rem;color:var(--text-faint)">{% if lang == 'en' %}Dec 2024 · ESO / Nature{% else %}Желтоқсан 2024 · ESO / Nature{% endif %}</div>
       </div>
     </div>
 
@@ -951,20 +961,20 @@
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px" class="reveal">
 
       <div class="glass hoverable news-card" data-category="mission discovery" style="padding:20px">
-        <div style="margin-bottom:10px"><span class="badge badge-success">Discovery</span></div>
+        <div style="margin-bottom:10px"><span class="badge badge-success">{% if lang == 'en' %}Discovery{% else %}Ашылым{% endif %}</span></div>
         <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
           data-en="GJ 667Cc: Updated Orbital Parameters Improve HZ Confidence"
           data-kz="GJ 667Cc: Жаңартылған орбиталық параметрлер ТА сенімділігін арттырды">GJ 667Cc: Updated Orbital Parameters Improve HZ Confidence</h4>
         <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
           data-en="Precision radial velocity measurements refine the orbit of GJ 667Cc, a super-Earth in the habitable zone of a triple-star system 23 light-years away. The new data confirms the planet spends over 90% of its orbit within the conservative habitable zone."
           data-kz="Дәл радиалды жылдамдық өлшемдері 23 жарық жыл қашықтағы үш жұлдызды жүйедегі тіршілік аймағындағы GJ 667Cc суперже-жерінің орбитасын нақтылады. Жаңа деректер планета уақытының 90%-дан астамын консервативті тіршілік аймағында өткізетінін растайды.">Precision radial velocity measurements refine the orbit of GJ 667Cc, a super-Earth in the habitable zone of a triple-star system 23 light-years away. The new data confirms the planet spends over 90% of its orbit within the conservative habitable zone.</p>
-        <div style="font-size:0.68rem;color:var(--text-faint)">Oct 2024 · HARPS Spectrograph</div>
+        <div style="font-size:0.68rem;color:var(--text-faint)">{% if lang == 'en' %}Oct 2024 · HARPS Spectrograph{% else %}Қазан 2024 · HARPS спектрографы{% endif %}</div>
       </div>
 
       <div class="glass hoverable news-card" data-category="mission jwst" style="padding:20px">
         <div style="margin-bottom:10px">
           <span class="badge badge-info">JWST</span>
-          <span class="badge" style="margin-left:4px;background:rgba(212,165,116,0.12);color:var(--accent);border:1px solid rgba(212,165,116,0.25)">Mission</span>
+          <span class="badge" style="margin-left:4px;background:rgba(212,165,116,0.12);color:var(--accent);border:1px solid rgba(212,165,116,0.25)">{% if lang == 'en' %}Mission{% else %}Миссия{% endif %}</span>
         </div>
         <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
           data-en="55 Cancri e: Magma Ocean and Shifting Atmosphere Confirmed"
@@ -972,12 +982,12 @@
         <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
           data-en="JWST's MIRI instrument captures unprecedented thermal maps of 55 Cancri e revealing a dynamic lava world with a volatile atmosphere that appears and disappears as the planet orbits its star every 17.7 hours. The discovery offers insight into early Earth-like geological processes."
           data-kz="JWST-тің MIRI аспабы 55 Cancri e планетасының теңдесі жоқ термиялық карталарын алып, 17,7 сағатта бір жұлдыз айналатын ұшпа атмосферасы бар динамикалық лава әлемін ашты. Жаңалық ерте Жер геологиялық процестерін зерттеуге мүмкіндік береді.">JWST's MIRI instrument captures unprecedented thermal maps of 55 Cancri e revealing a dynamic lava world with a volatile atmosphere that appears and disappears as the planet orbits its star every 17.7 hours. The discovery offers insight into early Earth-like geological processes.</p>
-        <div style="font-size:0.68rem;color:var(--text-faint)">May 2024 · MIRI / JWST</div>
+        <div style="font-size:0.68rem;color:var(--text-faint)">{% if lang == 'en' %}May 2024 · MIRI / JWST{% else %}Мамыр 2024 · MIRI / JWST{% endif %}</div>
       </div>
 
       <div class="glass hoverable news-card" data-category="discovery mission" style="padding:20px">
         <div style="margin-bottom:10px">
-          <span class="badge badge-success">Discovery</span>
+          <span class="badge badge-success">{% if lang == 'en' %}Discovery{% else %}Ашылым{% endif %}</span>
         </div>
         <h4 class="news-title" style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4"
           data-en="Wolf 1061c: One of the Closest Potentially Habitable Worlds"
@@ -985,38 +995,38 @@
         <p class="news-body" style="font-size:0.75rem;color:var(--text-muted);line-height:1.55;margin-bottom:12px"
           data-en="At just 13.8 light-years away, Wolf 1061c remains one of the closest known super-Earths in the habitable zone. New high-resolution imaging constraints rule out a large moon companion and refine the planet's bulk composition to a likely rocky interior with possible surface water."
           data-kz="Небары 13,8 жарық жыл қашықтықта орналасқан Wolf 1061c тіршілік аймағындағы ең жақын белгілі суперже-жерлердің бірі болып қала береді. Жаңа жоғары ажыратымдылықты кескіндеу деректері үлкен ай серігін жоққа шығарып, планетаның беттік суы болуы мүмкін тасты ішкі құрылымын нақтылады.">At just 13.8 light-years away, Wolf 1061c remains one of the closest known super-Earths in the habitable zone. New high-resolution imaging constraints rule out a large moon companion and refine the planet's bulk composition to a likely rocky interior with possible surface water.</p>
-        <div style="font-size:0.68rem;color:var(--text-faint)">Feb 2025 · AAT / UCSD</div>
+        <div style="font-size:0.68rem;color:var(--text-faint)">{% if lang == 'en' %}Feb 2025 · AAT / UCSD{% else %}Ақпан 2025 · AAT / UCSD{% endif %}</div>
       </div>
 
       <!-- Data panel: Mission Stats -->
       <div class="glass" style="padding:0;overflow:hidden">
         <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(212,165,116,0.04)">
-          <div style="font-size:0.60rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint)">Active Missions</div>
-          <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);margin-top:2px">Latest Missions</div>
+          <div style="font-size:0.60rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint)">{% if lang == 'en' %}Active Missions{% else %}Белсенді Миссиялар{% endif %}</div>
+          <div style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text);margin-top:2px">{% if lang == 'en' %}Latest Missions{% else %}Соңғы Миссиялар{% endif %}</div>
         </div>
         <div style="padding:14px 18px">
           <div style="margin-bottom:14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
               <span style="font-size:0.78rem;font-weight:600;color:var(--text)">James Webb (JWST)</span>
-              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(124,185,124,0.15);color:var(--green);border-radius:5px">Active</span>
+              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(124,185,124,0.15);color:var(--green);border-radius:5px">{% if lang == 'en' %}Active{% else %}Белсенді{% endif %}</span>
             </div>
-            <div style="font-size:0.70rem;color:var(--text-faint)">Atmosphere characterization</div>
+            <div style="font-size:0.70rem;color:var(--text-faint)">{% if lang == 'en' %}Atmosphere characterization{% else %}Атмосфераны сипаттау{% endif %}</div>
             <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:78%;background:var(--green);border-radius:2px"></div></div>
           </div>
           <div style="margin-bottom:14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
               <span style="font-size:0.78rem;font-weight:600;color:var(--text)">TESS</span>
-              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(124,185,124,0.15);color:var(--green);border-radius:5px">Active</span>
+              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(124,185,124,0.15);color:var(--green);border-radius:5px">{% if lang == 'en' %}Active{% else %}Белсенді{% endif %}</span>
             </div>
-            <div style="font-size:0.70rem;color:var(--text-faint)">Transit photometry survey</div>
+            <div style="font-size:0.70rem;color:var(--text-faint)">{% if lang == 'en' %}Transit photometry survey{% else %}Транзиттік фотометрия{% endif %}</div>
             <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:90%;background:var(--accent);border-radius:2px"></div></div>
           </div>
           <div style="margin-bottom:14px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
               <span style="font-size:0.78rem;font-weight:600;color:var(--text)">Gaia DR3</span>
-              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(0,212,255,0.12);color:var(--blue);border-radius:5px">Analysis</span>
+              <span style="font-size:0.68rem;padding:2px 7px;background:rgba(0,212,255,0.12);color:var(--blue);border-radius:5px">{% if lang == 'en' %}Analysis{% else %}Талдау{% endif %}</span>
             </div>
-            <div style="font-size:0.70rem;color:var(--text-faint)">Astrometric planet detection</div>
+            <div style="font-size:0.70rem;color:var(--text-faint)">{% if lang == 'en' %}Astrometric planet detection{% else %}Астрометриялық анықтау{% endif %}</div>
             <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:62%;background:var(--blue);border-radius:2px"></div></div>
           </div>
           <div>
@@ -1024,7 +1034,7 @@
               <span style="font-size:0.78rem;font-weight:600;color:var(--text)">Ariel (ESA)</span>
               <span style="font-size:0.68rem;padding:2px 7px;background:rgba(212,165,116,0.12);color:var(--accent);border-radius:5px">2029</span>
             </div>
-            <div style="font-size:0.70rem;color:var(--text-faint)">Exoplanet atmosphere survey</div>
+            <div style="font-size:0.70rem;color:var(--text-faint)">{% if lang == 'en' %}Exoplanet atmosphere survey{% else %}Экзопланета атмосферасын зерттеу{% endif %}</div>
             <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:6px"><div style="height:100%;width:18%;background:rgba(212,165,116,0.5);border-radius:2px"></div></div>
           </div>
         </div>
@@ -1063,16 +1073,16 @@
     <div class="glass reveal" style="margin-bottom:1rem;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
       <div>
         <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:4px">NASA / JPL</div>
-        <h2 style="font-size:1.2rem;font-weight:700;margin:0">Eyes on the Solar System</h2>
-        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:3px">Interactive 3D real-time simulation of our solar system &amp; NASA missions</p>
+        <h2 style="font-size:1.2rem;font-weight:700;margin:0">{% if lang == 'en' %}Eyes on the Solar System{% else %}Күн жүйесінің көрінісі{% endif %}</h2>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:3px">{% if lang == 'en' %}Interactive 3D real-time simulation of our solar system &amp; NASA missions{% else %}Күн жүйесі мен NASA миссияларының интерактивті 3D нақты уақыттағы симуляциясы{% endif %}</p>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-ghost" onclick="nasaEyesGoto('home')" title="Solar System overview">☀️ Solar System</button>
-        <button class="btn-ghost" onclick="nasaEyesGoto('mars')" title="Focus on Mars">🔴 Mars</button>
-        <button class="btn-ghost" onclick="nasaEyesGoto('jupiter')" title="Focus on Jupiter">🪐 Jupiter</button>
+        <button class="btn-ghost" onclick="nasaEyesGoto('home')" title="Solar System overview">☀️ {% if lang == 'en' %}Solar System{% else %}Күн жүйесі{% endif %}</button>
+        <button class="btn-ghost" onclick="nasaEyesGoto('mars')" title="Focus on Mars">🔴 {% if lang == 'en' %}Mars{% else %}Марс{% endif %}</button>
+        <button class="btn-ghost" onclick="nasaEyesGoto('jupiter')" title="Focus on Jupiter">🪐 {% if lang == 'en' %}Jupiter{% else %}Юпитер{% endif %}</button>
         <button class="btn-ghost" onclick="nasaEyesGoto('voyager1')" title="Voyager 1 mission">🛸 Voyager 1</button>
         <button class="btn-ghost" onclick="nasaEyesGoto('webb')" title="James Webb Space Telescope">🔭 JWST</button>
-        <a href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" class="btn-ghost" style="text-decoration:none">↗ Open Full</a>
+        <a href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" class="btn-ghost" style="text-decoration:none">↗ {% if lang == 'en' %}Open Full{% else %}Толық ашу{% endif %}</a>
       </div>
     </div>
 
@@ -1092,33 +1102,33 @@
       <!-- loading overlay -->
       <div id="nasaEyesLoader" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,9,18,0.92);border-radius:var(--radius-lg);pointer-events:none;transition:opacity 0.8s">
         <div style="font-size:2.5rem;margin-bottom:12px;animation:spin-slow 4s linear infinite">🌐</div>
-        <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:2px;color:var(--accent)">LOADING NASA EYES…</div>
-        <div style="font-size:0.65rem;color:var(--text-faint);margin-top:6px">Connecting to JPL simulation engine</div>
+        <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:2px;color:var(--accent)">{% if lang == 'en' %}LOADING NASA EYES…{% else %}NASA EYES ЖҮКТЕЛУДЕ…{% endif %}</div>
+        <div style="font-size:0.65rem;color:var(--text-faint);margin-top:6px">{% if lang == 'en' %}Connecting to JPL simulation engine{% else %}JPL симуляциялық қозғалтқышына қосылуда{% endif %}</div>
       </div>
     </div>
 
     <!-- Info cards row -->
     <div class="bento-4 reveal" style="margin-top:1rem;">
       <div class="glass" style="padding:16px 18px;">
-        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Navigation</div>
+        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">{% if lang == 'en' %}Navigation{% else %}Навигация{% endif %}</div>
         <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.7">
-          <b style="color:var(--text)">Left drag</b> — rotate view<br>
-          <b style="color:var(--text)">Right drag</b> — pan<br>
-          <b style="color:var(--text)">Scroll</b> — zoom in/out<br>
-          <b style="color:var(--text)">Click planet</b> — follow &amp; info
+          <b style="color:var(--text)">{% if lang == 'en' %}Left drag{% else %}Сол жақ батырмамен сүйреу{% endif %}</b> — {% if lang == 'en' %}rotate view{% else %}көріністі айналдыру{% endif %}<br>
+          <b style="color:var(--text)">{% if lang == 'en' %}Right drag{% else %}Оң жақ батырмамен сүйреу{% endif %}</b> — {% if lang == 'en' %}pan{% else %}панорамалау{% endif %}<br>
+          <b style="color:var(--text)">{% if lang == 'en' %}Scroll{% else %}Дөңгелекті айналдыру{% endif %}</b> — {% if lang == 'en' %}zoom in/out{% else %}жақындату/алыстату{% endif %}<br>
+          <b style="color:var(--text)">{% if lang == 'en' %}Click planet{% else %}Планетаны басу{% endif %}</b> — {% if lang == 'en' %}follow &amp; info{% else %}іздеу және ақпарат{% endif %}
         </div>
       </div>
       <div class="glass" style="padding:16px 18px;">
-        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Time Controls</div>
+        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">{% if lang == 'en' %}Time Controls{% else %}Уақытты басқару{% endif %}</div>
         <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.7">
-          <b style="color:var(--text)">Play/Pause</b> — time flow<br>
-          <b style="color:var(--text)">Speed slider</b> — up to ×1000<br>
-          <b style="color:var(--text)">Calendar</b> — jump to any date<br>
-          <b style="color:var(--text)">Today</b> — reset to now
+          <b style="color:var(--text)">{% if lang == 'en' %}Play/Pause{% else %}Ойнату/Кідірту{% endif %}</b> — {% if lang == 'en' %}time flow{% else %}уақыт ағымы{% endif %}<br>
+          <b style="color:var(--text)">{% if lang == 'en' %}Speed slider{% else %}Жылдамдық жүгірткісі{% endif %}</b> — {% if lang == 'en' %}up to ×1000{% else %}×1000-ге дейін{% endif %}<br>
+          <b style="color:var(--text)">{% if lang == 'en' %}Calendar{% else %}Күнтізбе{% endif %}</b> — {% if lang == 'en' %}jump to any date{% else %}кез келген күнге өту{% endif %}<br>
+          <b style="color:var(--text)">{% if lang == 'en' %}Today{% else %}Бүгін{% endif %}</b> — {% if lang == 'en' %}reset to now{% else %}қазіргі уақытқа қайтару{% endif %}
         </div>
       </div>
       <div class="glass" style="padding:16px 18px;">
-        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Featured Missions</div>
+        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">{% if lang == 'en' %}Featured Missions{% else %}Маңызды миссиялар{% endif %}</div>
         <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.7">
           🔭 James Webb ST<br>
           🛸 Voyager 1 &amp; 2<br>
@@ -1127,10 +1137,10 @@
         </div>
       </div>
       <div class="glass" style="padding:16px 18px;">
-        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">3D Models</div>
+        <div style="font-size:0.65rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">{% if lang == 'en' %}3D Models{% else %}3D Модельдер{% endif %}</div>
         <div style="font-size:0.78rem;color:var(--text-muted);line-height:1.7">
-          All planets &amp; moons in<br>accurate scale &amp; real orbital<br>mechanics.<br>
-          <a href="https://science.nasa.gov/3d-resources/" target="_blank" style="color:var(--accent);text-decoration:none">↗ Download 3D Models</a>
+          {% if lang == 'en' %}All planets &amp; moons in<br>accurate scale &amp; real orbital<br>mechanics.{% else %}Барлық планеталар мен серіктер<br>нақты масштабта және шынайы орбиталық<br>механикада.{% endif %}<br>
+          <a href="https://science.nasa.gov/3d-resources/" target="_blank" style="color:var(--accent);text-decoration:none">↗ {% if lang == 'en' %}Download 3D Models{% else %}3D модельдерді жүктеу{% endif %}</a>
         </div>
       </div>
     </div>
@@ -1285,7 +1295,7 @@ function updateMissionsDashboard(currentHostname, currentPlanets) {
       }).join('');
 
       const extraCount = activePlanets.length - 6;
-      const extraHtml = extraCount > 0 ? `<div style="display:flex;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);color:var(--text-faint);font-size:0.72rem">+${extraCount} more</div>` : '';
+      const extraHtml = extraCount > 0 ? `<div style="display:flex;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);color:var(--text-faint);font-size:0.72rem">+${extraCount} ${_kz ? 'тағы да' : 'more'}</div>` : '';
 
       const labelCur = _kz ? 'Жүктелген' : 'Currently Loaded';
       const labelBtn = _kz ? 'Жүйені қарау →' : 'View System →';
@@ -1953,24 +1963,29 @@ async function loadStarmap() {
     const d  = systems[hostname];
     const sc = d.best_score || 0;
     const scColor = sc >= 70 ? '#7cb97c' : sc >= 50 ? '#00d4ff' : sc >= 30 ? '#d4a574' : '#f87171';
-    const safeName = hostname.replace(/[ ]/g,'_').replace(/[-]/g,'_');
-    const hzBadge = (d.habitable_count > 0) ? `<span class="badge badge-success">${d.habitable_count} HZ</span>` : '';
+    const safeName = hostname.replace(/[\s-]/g,'_');
+    const hzBadge = (d.habitable_count > 0) ? `<span class="badge badge-success">${d.habitable_count} ${_kz ? 'МЖА' : 'HZ'}</span>` : '';
     return `<div class="glass system-row hoverable" data-name="${hostname}" data-score="${sc}"
          data-distance="${d.distance||9999}" data-planets="${d.planet_count||0}">
       <div>
         <div class="sys-name">🌟 ${hostname}</div>
-        <div class="sys-meta">${d.planet_count||0} planets · ${d.distance ? d.distance.toFixed(1) : '?'} ly · ${d.timestamp||''}</div>
+        <div class="sys-meta">${d.planet_count||0} ${_kz ? 'планета' : 'planets'} · ${d.distance ? d.distance.toFixed(1) : '?'} ${_kz ? 'ж.ж.' : 'ly'} · ${d.timestamp||''}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="badge badge-info">${d.planet_count||0} ${_kz ? 'планета' : 'planets'}</span>
+        ${hzBadge}
       </div>
       <div class="sys-score" style="color:${scColor}">${sc}<span class="text-faint text-xs">/100</span></div>
-      <div>${hzBadge}</div>
-      <button class="btn btn-secondary btn-sm" style="gap:4px" onclick="toggleStarAI('${hostname}', this)">✨ AI</button>
-      <button class="btn btn-secondary btn-sm" onclick="loadSystem('${hostname}')">Load</button>
-      <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSystem('${hostname}', this)" title="Delete">✕</button>
+      <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
+        <button class="btn btn-secondary btn-sm" style="gap:4px" onclick="toggleStarAI('${hostname}', this)">✨ AI</button>
+        <button class="btn btn-secondary btn-sm" onclick="loadSystem('${hostname}')">${_kz ? 'Жүктеу' : 'Load'}</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSystem('${hostname}', this)" title="${_kz ? 'Өшіру' : 'Delete'}">✕</button>
+      </div>
     </div>
     <div id="starai-${safeName}" style="display:none;padding:10px 16px 14px;margin-top:-6px;
          background:rgba(212,165,116,0.04);border:1px solid rgba(212,165,116,0.18);
-         border-top:none;border-radius:0 0 10px 10px">
-      <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:6px">✨ ATLAS AI · System Profile</div>
+         border-top:none;border-radius:0 0 10px 10px;margin-bottom:8px">
+      <div style="font-size:0.60rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:6px">✨ ATLAS AI · ${_kz ? 'Жүйе профилі' : 'System Profile'}</div>
       <div class="starai-text-${safeName}" style="font-size:0.78rem;color:var(--text-muted);line-height:1.6">…</div>
     </div>`;
   }).join('');
@@ -2236,7 +2251,7 @@ const CHAT_COMMANDS = [
   {
     patterns: [ /(?:compare|comparison)\s*(?:planets?|worlds?|tab)?/i ],
     handler: async (match, typing) => {
-      typing.querySelector('.msg-bubble').textContent = '📏 Opening Planet Comparison…';
+      typing.querySelector('.msg-bubble').textContent = _kz ? '📏 Планеталарды салыстыру ашылуда…' : '📏 Opening Planet Comparison…';
       switchTab('compare');
     }
   },
@@ -2246,7 +2261,7 @@ const CHAT_COMMANDS = [
       /(?:travel|fly|how long)(?:\s+to)?\s+([A-Za-z0-9\s'\-\.]+)/i,
     ],
     handler: async (match, typing) => {
-      typing.querySelector('.msg-bubble').textContent = '🚀 Opening Travel Simulator…';
+      typing.querySelector('.msg-bubble').textContent = _kz ? '🚀 Саяхат симуляторы ашылуда…' : '🚀 Opening Travel Simulator…';
       switchTab('travel');
     }
   },
@@ -2257,7 +2272,7 @@ const CHAT_COMMANDS = [
       /solar system (?:view|sim|3d)/i,
     ],
     handler: async (match, typing) => {
-      typing.querySelector('.msg-bubble').textContent = '🌌 Opening NASA Eyes…';
+      typing.querySelector('.msg-bubble').textContent = _kz ? '🌌 NASA Eyes ашылуда…' : '🌌 Opening NASA Eyes…';
       switchTab('nasaeyes');
     }
   },
@@ -2270,11 +2285,11 @@ const CHAT_COMMANDS = [
     handler: async (match, typing) => {
       const keys = Object.keys(SYSTEMS);
       if (!keys.length) {
-        typing.querySelector('.msg-bubble').textContent = "You haven't scanned any systems yet. Try: scan TRAPPIST-1";
+        typing.querySelector('.msg-bubble').textContent = _kz ? "Сіз әлі ешқандай жүйені сканерлемедіңіз. Байқап көріңіз: scan TRAPPIST-1" : "You haven't scanned any systems yet. Try: scan TRAPPIST-1";
       } else {
         typing.querySelector('.msg-bubble').innerHTML =
-          `📡 You have scanned <b>${keys.length}</b> system(s):<br>` +
-          keys.map(k => `• <b>${k}</b> — ${SYSTEMS[k].planet_count || 0} planets`).join('<br>');
+          (_kz ? `📡 Сіз <b>${keys.length}</b> жүйені сканерледіңіз:<br>` : `📡 You have scanned <b>${keys.length}</b> system(s):<br>`) +
+          keys.map(k => `• <b>${k}</b> — ${SYSTEMS[k].planet_count || 0} ${_kz ? 'планета' : 'planets'}`).join('<br>');
       }
     }
   },
@@ -2355,12 +2370,13 @@ function addLogEntry(name, count, score) {
   if (empty) empty.remove();
   const div = document.createElement('div');
   div.className = 'log-entry';
+  const _kz = window.ATLAS?.lang === 'kz';
   div.innerHTML = `
     <div class="log-dot"></div>
     <div class="log-body">
       <div class="log-time">${new Date().toLocaleTimeString()}</div>
-      <div class="log-action">Scanned ${name}</div>
-      <div class="log-result">${count} planets found · Best: ${score}/100</div>
+      <div class="log-action">${_kz ? `${name} сканерленді` : `Scanned ${name}`}</div>
+      <div class="log-result">${_kz ? `${count} планета табылды` : `${count} planets found`} · Best: ${score}/100</div>
     </div>`;
   container.insertBefore(div, container.firstChild);
 }

@@ -190,6 +190,7 @@ async function askGemini(topicId, topicTitle) {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
+        topic_id: topicId,
         question: `Explain this exoplanet science topic in depth: "${topicTitle}"`,
         mode: 'encyclopedia',
         lang: ENC_LANG

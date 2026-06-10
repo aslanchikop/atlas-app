@@ -42,7 +42,7 @@
   <!-- ══════════════════════════════════════════════
        ROW 1 — 4 Big Data Metric Panels
        ══════════════════════════════════════════════ -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px" class="reveal">
+  <div class="bento-4 reveal" style="margin-bottom:14px">
 
     <div class="glass" style="padding:24px 22px;position:relative;overflow:hidden">
       <div class="hud-panel-br"></div>
@@ -68,12 +68,12 @@
       <div class="hud-panel-br"></div>
       <div style="font-size:0.60rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-faint);margin-bottom:10px;display:flex;align-items:center;gap:8px">
         <span style="width:16px;height:1px;background:var(--green);display:inline-block;opacity:0.5"></span>
-        {% if lang == 'en' %}Habitable Candidates{% else %}Тіршілік аймағы{% endif %}
+        {% if lang == 'en' %}Habitable Candidates{% else %}Үміткерлер (МЖА){% endif %}
       </div>
       <div style="font-family:var(--font-display);font-size:clamp(2.2rem,3.5vw,3rem);font-weight:800;line-height:1;background:linear-gradient(130deg,#7cb97c,#a8d5a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">{{ summary.habitable_count }}</div>
       <div style="font-size:0.72rem;color:var(--text-muted);display:flex;align-items:center;gap:8px">
         <span style="background:rgba(109,186,109,0.12);color:var(--green);border-radius:8px;padding:1px 7px;font-size:0.65rem;font-weight:700">HZ</span>
-        {% if lang == 'en' %}In habitable zone{% else %}Тіршілік аймағы{% endif %}
+        {% if lang == 'en' %}In habitable zone{% else %}Тіршілік аймағында{% endif %}
       </div>
     </div>
 
@@ -81,7 +81,7 @@
       <div class="hud-panel-br"></div>
       <div style="font-size:0.60rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-faint);margin-bottom:10px;display:flex;align-items:center;gap:8px">
         <span style="width:16px;height:1px;background:var(--yellow);display:inline-block;opacity:0.5"></span>
-        {% if lang == 'en' %}Avg Habitability{% else %}Орта тіршілік{% endif %}
+        {% if lang == 'en' %}Avg Habitability{% else %}Орташа тіршілік{% endif %}
       </div>
       <div style="font-family:var(--font-display);font-size:clamp(2.2rem,3.5vw,3rem);font-weight:800;line-height:1;background:linear-gradient(130deg,#fbbf24,rgba(212,165,116,0.9));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">{{ "%.0f"|format(summary.avg_score) }}<span style="font-size:1.1rem;opacity:0.7">%</span></div>
       <div style="font-size:0.72rem;color:var(--text-muted);display:flex;align-items:center;gap:8px">⭐ {% if lang == 'en' %}Across all planets{% else %}Барлық планеталар бойынша{% endif %}</div>
@@ -92,7 +92,7 @@
   <!-- ══════════════════════════════════════════════
        ROW 2 — Chart + Top Planets + Habitability Bars
        ══════════════════════════════════════════════ -->
-  <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:start" class="reveal">
+  <div class="analysis-main-grid reveal">
 
     <!-- Score Distribution Chart -->
     <div class="glass" style="padding:22px">
@@ -126,29 +126,27 @@
     <div class="glass" style="padding:22px">
       <div class="section-title">{% if lang == 'en' %}Score Breakdown{% else %}Ұпай Бөлінісі{% endif %}</div>
       {% set total = summary.total_planets if summary.total_planets > 0 else 1 %}
-      {% set high_count = top_planets|selectattr('score','ge',70)|list|length %}
-      {% set mid_count  = top_planets|selectattr('score','ge',40)|list|length - high_count %}
       <div style="display:flex;flex-direction:column;gap:0">
         <div class="metric-bar-row">
           <div class="metric-bar-header">
-            <span class="metric-bar-name">🟢 {% if lang == 'en' %}High (70–100){% else %}Жоғары{% endif %}</span>
-            <span class="metric-bar-val">{{ summary.habitable_count }}</span>
+            <span class="metric-bar-name">🟢 {% if lang == 'en' %}High (70–100){% else %}Жоғары (70–100){% endif %}</span>
+            <span class="metric-bar-val">{{ summary.high_count }}</span>
           </div>
-          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:{{ [summary.habitable_count / total * 100, 100]|min }}%;background:linear-gradient(90deg,var(--green),#a8d5a8)"></div></div>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:{{ [summary.high_count / total * 100, 100]|min }}%;background:linear-gradient(90deg,var(--green),#a8d5a8)"></div></div>
         </div>
         <div class="metric-bar-row">
           <div class="metric-bar-header">
-            <span class="metric-bar-name">🟡 {% if lang == 'en' %}Moderate (40–70){% else %}Орташа{% endif %}</span>
-            <span class="metric-bar-val">{{ [summary.total_planets - summary.habitable_count, 0]|max }}</span>
+            <span class="metric-bar-name">🟡 {% if lang == 'en' %}Moderate (40–70){% else %}Орташа (40–70){% endif %}</span>
+            <span class="metric-bar-val">{{ summary.mid_count }}</span>
           </div>
-          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:{{ [[summary.total_planets - summary.habitable_count, 0]|max / total * 100, 100]|min }}%;background:linear-gradient(90deg,var(--accent-dark),var(--accent))"></div></div>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:{{ [summary.mid_count / total * 100, 100]|min }}%;background:linear-gradient(90deg,var(--accent-dark),var(--accent))"></div></div>
         </div>
         <div class="metric-bar-row">
           <div class="metric-bar-header">
-            <span class="metric-bar-name">🔴 {% if lang == 'en' %}Low (&lt;40){% else %}Төмен{% endif %}</span>
-            <span class="metric-bar-val">{{ [summary.total_planets - summary.habitable_count, 0]|max }}</span>
+            <span class="metric-bar-name">🔴 {% if lang == 'en' %}Low (&lt;40){% else %}Төмен (&lt;40){% endif %}</span>
+            <span class="metric-bar-val">{{ summary.low_count }}</span>
           </div>
-          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:{{ [[summary.total_planets - summary.habitable_count, 0]|max / total * 100, 100]|min }}%;background:linear-gradient(90deg,#b45454,var(--red))"></div></div>
+          <div class="metric-bar-track"><div class="metric-bar-fill" style="width:{{ [summary.low_count / total * 100, 100]|min }}%;background:linear-gradient(90deg,#b45454,var(--red))"></div></div>
         </div>
       </div>
       <div class="accent-rule"></div>
@@ -164,12 +162,12 @@
        ROW 3 — Recommendations + Hypotheses
        ══════════════════════════════════════════════ -->
   {% if recommendations or hypotheses %}
-  <div style="display:grid;grid-template-columns:{% if recommendations and hypotheses %}1fr 1fr{% else %}1fr{% endif %};gap:14px;margin-bottom:14px;align-items:start" class="reveal">
+  <div class="analysis-side-grid reveal">
 
     {% if recommendations %}
     <div class="glass" style="padding:22px">
       <div class="section-title">{% if lang == 'en' %}AI Recommendations{% else %}ЖИ Ұсыныстары{% endif %}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="recs-two-grid">
         {% for rec in recommendations %}
         <div class="glass hoverable" style="padding:14px 16px;border-radius:var(--radius-md)">
           <div class="rec-priority rec-{{ rec.priority }}" style="margin-bottom:6px">
@@ -222,14 +220,14 @@
             <th>{% if lang == 'en' %}Planets{% else %}Планеталар{% endif %}</th>
             <th>{% if lang == 'en' %}Best Score{% else %}Үздік Ұпай{% endif %}</th>
             <th>{% if lang == 'en' %}Habitable{% else %}Тіршілік{% endif %}</th>
-            <th>{% if lang == 'en' %}Distance (ly){% else %}Қашықтық{% endif %}</th>
+            <th>{% if lang == 'en' %}Distance (ly){% else %}Қашықтық (ж.ж.){% endif %}</th>
             <th>{% if lang == 'en' %}Scanned{% else %}Сканерленді{% endif %}</th>
             <th>{% if lang == 'en' %}Action{% else %}Іс-әрекет{% endif %}</th>
           </tr>
         </thead>
         <tbody>
           {% for name, sys in systems.items() %}
-          <tr class="system-row">
+          <tr class="analysis-table-row">
             <td>
               <div style="display:flex;align-items:center;gap:8px">
                 <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px rgba(212,165,116,0.5);flex-shrink:0"></span>
@@ -245,10 +243,10 @@
               {% set hz_count = sys.planets|selectattr('in_hz','equalto',True)|list|length %}
               {% if hz_count > 0 %}<span class="badge badge-success">{{ hz_count }} HZ</span>{% else %}<span style="color:var(--text-faint)">—</span>{% endif %}
             </td>
-            <td style="color:var(--text-muted)">{{ "%.1f"|format(sys.star.distance) if sys.star.distance else '—' }} ly</td>
-            <td style="color:var(--text-faint);font-size:0.78rem">{{ sys.scanned_at[:10] if sys.scanned_at else '—' }}</td>
+            <td style="color:var(--text-muted)">{{ "%.1f"|format(sys.star.distance) if sys.star.distance else '—' }} {% if lang == 'en' %}ly{% else %}ж.ж.{% endif %}</td>
+            <td style="color:var(--text-faint);font-size:0.78rem">{{ sys.timestamp[:10] if sys.timestamp else '—' }}</td>
             <td>
-              <a href="/explore?lang={{ lang }}&load={{ name }}" class="btn btn-secondary btn-sm" style="font-size:0.70rem;padding:4px 12px">View</a>
+              <a href="/explore?lang={{ lang }}&load={{ name }}" class="btn btn-secondary btn-sm" style="font-size:0.70rem;padding:4px 12px">{% if lang == 'en' %}View{% else %}Көру{% endif %}</a>
             </td>
           </tr>
           {% endfor %}
@@ -388,7 +386,7 @@ Plotly.newPlot('scoreHistChart', histData.data,
 
 function filterSystems(query) {
   const q = query.toLowerCase();
-  document.querySelectorAll('#systemsTable .system-row').forEach(row => {
+  document.querySelectorAll('#systemsTable .analysis-table-row').forEach(row => {
     row.style.display = row.cells[0].textContent.toLowerCase().includes(q) ? '' : 'none';
   });
 }

@@ -26,7 +26,7 @@
   <div class="search-modal" id="searchModal">
     <div class="search-input-wrap">
       <span class="search-icon">⌕</span>
-      <input class="search-input" id="searchInput" placeholder="Search systems, planets, topics…"
+      <input class="search-input" id="searchInput" placeholder="{% if lang == 'en' %}Search systems, planets, topics…{% else %}Жүйелерді, планеталарды, тақырыптарды іздеу…{% endif %}"
              oninput="runSearch(this.value)" onkeydown="searchNav(event)">
       <span class="search-kbd">ESC</span>
     </div>
@@ -34,9 +34,9 @@
       <div class="search-empty">{% if lang == 'en' %}Type to search across all systems and topics{% else %}Жүйелер мен тақырыптар бойынша іздеу үшін теріңіз{% endif %}</div>
     </div>
     <div class="search-footer">
-      <span class="search-hint"><kbd>↑↓</kbd> Navigate</span>
-      <span class="search-hint"><kbd>↵</kbd> Open</span>
-      <span class="search-hint"><kbd>ESC</kbd> Close</span>
+      <span class="search-hint"><kbd>↑↓</kbd> {% if lang == 'en' %}Navigate{% else %}Навигация{% endif %}</span>
+      <span class="search-hint"><kbd>↵</kbd> {% if lang == 'en' %}Open{% else %}Ашу{% endif %}</span>
+      <span class="search-hint"><kbd>ESC</kbd> {% if lang == 'en' %}Close{% else %}Жабу{% endif %}</span>
     </div>
   </div>
 </div>
@@ -1324,7 +1324,20 @@ window.ATLAS.path = "{{ request.path }}";
 })();
 
 // ── CMD+K Search ─────────────────────────────────────────
-const SEARCH_INDEX = [
+const SEARCH_INDEX = window.ATLAS.lang === 'kz' ? [
+  { title: 'Жүйелерді зерттеу', sub: 'Жұлдыз жүйелері мен планеталарды сканерлеу', icon: '🔭', url: '/explore', tag: 'Бет' },
+  { title: 'Миссияны талдау', sub: 'Тіршілік жарамдылығы туралы барлаулық есеп', icon: '📊', url: '/analysis', tag: 'Бет' },
+  { title: 'Анықтамалық нұсқаулық', sub: 'Ғылыми тұжырымдамалар мен формулалар', icon: '📚', url: '/encyclopedia', tag: 'Бет' },
+  { title: 'Зерттеу профилі', sub: 'Сіздің жетістіктеріңіз бен прогресіңіз', icon: '🏆', url: '/about', tag: 'Бет' },
+  { title: 'ESI — Жермен ұқсастық индексі', sub: 'Жерге ұқсастық (0–1 шкаласы)', icon: '🌍', url: '/encyclopedia', tag: 'Тұжырымдама' },
+  { title: 'Тіршілік аймағы', sub: 'Сұйық су болуы мүмкін аймақ', icon: '💧', url: '/encyclopedia', tag: 'Тұжырымдама' },
+  { title: 'Транзиттік әдіс', sub: 'Жұлдыздың күңгірттенуі арқылы планетаны анықтау', icon: '⭐', url: '/encyclopedia', tag: 'Тұжырымдама' },
+  { title: 'Радиалды жылдамдық', sub: 'Доплерлік тербелісті анықтау әдісі', icon: '〰️', url: '/encyclopedia', tag: 'Тұжырымдама' },
+  { title: 'ЖИ чаты', sub: 'ATLAS ЖИ-ден экзопланеталар туралы сұраңыз', icon: '🤖', url: '/explore?tab=chat', tag: 'Мүмкіндік' },
+  { title: 'Жұлдызды карта', sub: 'Маңайдағы жұлдыздардың 3D картасы', icon: '🗺️', url: '/explore?tab=map', tag: 'Мүмкіндік' },
+  { title: 'Саяхат симуляторы', sub: 'Релятивистік саяхат уақытының калькуляторы', icon: '🚀', url: '/explore?tab=travel', tag: 'Мүмкіндік' },
+  { title: 'Планеталарды салыстыру', sub: 'Планеталарды қатар салыстыру', icon: '📏', url: '/explore?tab=compare', tag: 'Мүмкіндік' },
+] : [
   { title: 'Explore Systems', sub: 'Scan star systems and planets', icon: '🔭', url: '/explore', tag: 'Page' },
   { title: 'Mission Analysis', sub: 'Habitability intelligence report', icon: '📊', url: '/analysis', tag: 'Page' },
   { title: 'Reference Guide', sub: 'Scientific concepts and formulas', icon: '📚', url: '/encyclopedia', tag: 'Page' },
@@ -1363,11 +1376,12 @@ function runSearch(q) {
 }
 function renderSearchResults(items) {
   const el = document.getElementById('searchResults');
+  const _kz = window.ATLAS.lang === 'kz';
   if (!items.length) {
     const q = document.getElementById('searchInput').value.trim();
     el.innerHTML = q
-      ? '<div class="search-empty">No results for "' + q + '"</div>'
-      : '<div class="search-empty">Type to search across all systems and topics</div>';
+      ? '<div class="search-empty">' + (_kz ? `"${q}" үшін нәтижелер табылмады` : 'No results for "' + q + '"') + '</div>'
+      : '<div class="search-empty">' + (_kz ? 'Жүйелер мен тақырыптар бойынша іздеу үшін теріңіз' : 'Type to search across all systems and topics') + '</div>';
     return;
   }
   el.innerHTML = items.map((item, i) => `

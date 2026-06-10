@@ -534,6 +534,29 @@ Measuring precise star position wobble.
     }
 }
 
+ENCYCLOPEDIA_FALLBACKS = {
+    'star_types': {
+        'en': "Stellar spectral types O, B, A, F, G, K, M describe a star's surface temperature and spectral properties. While G-type yellow dwarfs (like our Sun) and K-type orange dwarfs are considered ideal hosts for life due to their long lifespans and stability, M-type red dwarfs are far more common but present challenges like intense stellar flares and tidal locking. Our research engine analyzes these spectral features to assess the long-term viability of orbital life.",
+        'kz': "Жұлдыздардың O, B, A, F, G, K, M спектрлік типтері жұлдыз бетінің температурасы мен спектрлік қасиеттерін сипаттайды. Біздің Күн сияқты G-типті сары ергежейлілер және K-типті сарғыш ергежейлілер ұзақ өмір сүру мерзімі мен тұрақтылығына байланысты тіршілік үшін ең қолайлы болып саналса, M-типті қызыл ергежейлілер жиі кездеседі, бірақ олардың қуатты жарқылдары мен толқындық бекітілуі қауіп төндіреді. ATLAS осы қасиеттерді бағалайды."
+    },
+    'planet_types': {
+        'en': "Exoplanets are categorized primarily by physical radius: dwarfs, sub-Earths, terrestrial (Earth-sized), super-Earths, mini-Neptunes, and giants. The boundary between super-Earths (which are rocky) and mini-Neptunes (which are gaseous) is around 1.5 to 2.0 Earth radii, often referred to as the 'Radius Valley'. Our planetary classification algorithm uses these thresholds to predict core compositions and atmospheric retention.",
+        'kz': "Экзопланеталар негізінен физикалық радиусы бойынша жіктеледі: ергежейлілер, суб-Жерлер, жер тәрізді (Жер мөлшеріндей), супер-Жерлер, мини-Нептундар және алыптар. Тасты супер-Жерлер мен газ тәрізді мини-Нептундар арасындағы шекара шамамен 1.5-2.0 Жер радиусын құрайды және бұл «Радиус алқабы» деп аталады. ATLAS осы мәліметтерді пайдаланып планеталар құрамын болжайды."
+    },
+    'habitability': {
+        'en': "Habitability assessment in ATLAS relies on multiple physical indicators, including the Earth Similarity Index (ESI) and circumstellar Habitable Zone (HZ) boundaries. The HZ is the zone where liquid water can remain stable on a rocky planet's surface. ESI mathematically scales a planet's radius, density, escape velocity, and temperature against Earth. However, actual habitability also requires a protective magnetosphere and stable atmospheric pressure.",
+        'kz': "ATLAS-та мекендеу жарамдылығын бағалау Жерге ұқсастық индексі (ESI) және жұлдыз айналасындағы тіршілік аймағының (HZ) шекаралары сияқты көптеген физикалық көрсеткіштерге негізделген. Тіршілік аймағы — планета бетінде сұйық су тұрақты бола алатын аймақ. ESI планета радиусын, тығыздығын және температурасын Жермен салыстырады."
+    },
+    'detection': {
+        'en': "We discover exoplanets using several ingenious methods. The Transit Method measures the periodic dimming of a star as a planet passes in front of it, giving us the planet's radius. The Radial Velocity method measures the star's tiny gravitational wobble using Doppler spectroscopy, giving us the planet's mass. Combining both allows astronomers to calculate density, determining whether a world is rocky, water-rich, or gaseous.",
+        'kz': "Біз экзопланеталарды бірнеше күрделі әдістер арқылы анықтаймыз. Транзит әдісі планета жұлдыздың алдынан өткенде оның жарықтылығының төмендеуін өлшеп, радиусты анықтайды. Радиалды жылдамдық әдісі жұлдыздың гравитациялық тербелісін Доплер спектроскопиясы арқылы өлшеп, планета массасын анықтайды. Осы екі әдісті біріктіру тығыздықты анықтауға көмектеседі."
+    },
+    'missions': {
+        'en': "Space telescopes have revolutionized exoplanetary science. NASA's legacy Kepler mission discovered thousands of planets, proving they are common in our galaxy. Currently, TESS surveys nearby bright stars to identify key targets, while the James Webb Space Telescope (JWST) analyzes exoplanet atmospheres using transmission spectroscopy to search for carbon dioxide, water vapor, and potential biosignatures.",
+        'kz': "Ғарыш телескоптары экзопланеталар ғылымын түбегейлі өзгертті. NASA-ның Kepler миссиясы мыңдаған планеталарды ашып, олардың ғаламда жиі кездесетінін дәлелдеді. Қазіргі уақытта TESS маңайдағы жұлдыздарды зерттейді, ал Джеймс Вебб телескопы (JWST) экзопланета атмосферасының спектроскопиясын жасап, су буы мен биосигнатураларды іздейді."
+    }
+}
+
 # ── Scientific Functions ──────────────────────────────────────────────────────
 
 def calc_luminosity(teff, rad):
@@ -1032,26 +1055,65 @@ def generate_recommendations():
     recs = []
     best = max(all_p, key=lambda x: x['hab_score'])
     if best['hab_score'] >= 50:
+        type_map = {
+            '🪨 Dwarf Planet': 'Ергежейлі планета',
+            '🔴 Sub-Earth': 'Суб-Жер',
+            '🌍 Terrestrial': 'Жер тәрізді',
+            '🌎 Super-Earth': 'Супер-Жер',
+            '💧 Mini-Neptune': 'Мини-Нептун',
+            '🔵 Ice Giant': 'Мұзды алып',
+            '🔥 Hot Jupiter': 'Ыстық Юпитер',
+            '🪐 Gas Giant': 'Газ алыбы',
+            '🟤 Super-Jupiter': 'Супер-Юпитер'
+        }
+        best_type_kz = type_map.get(best['type'], best['type'])
         recs.append({
-            'title': f"🎯 Priority Target: {best['name']}",
-            'reason': f"Highest habitability score ({best['hab_score']}/100) — {best['type']}",
-            'action': 'Recommend spectroscopic follow-up for atmospheric analysis'
+            'title': {
+                'en': f"🎯 Priority Target: {best['name']}",
+                'kz': f"🎯 Басты нысана: {best['name']}"
+            },
+            'reason': {
+                'en': f"Highest habitability score ({best['hab_score']}/100) — {best['type']}",
+                'kz': f"Ең жоғары тіршілік ұпайы ({best['hab_score']}/100) — {best_type_kz}"
+            },
+            'action': {
+                'en': 'Recommend spectroscopic follow-up for atmospheric analysis',
+                'kz': 'Атмосфералық талдау үшін спектроскопиялық зерттеу ұсынылады'
+            }
         })
     earth_like = [p for p in all_p if p['esi'] >= 0.7]
     if earth_like:
         recs.append({
-            'title': f"🌍 Earth-like Candidates ({len(earth_like)})",
-            'reason': 'High ESI values suggest Earth-similar conditions',
-            'action': 'Search for water vapor and oxygen signatures'
+            'title': {
+                'en': f"🌍 Earth-like Candidates ({len(earth_like)})",
+                'kz': f"🌍 Жерге ұқсас үміткерлер ({len(earth_like)})"
+            },
+            'reason': {
+                'en': 'High ESI values suggest Earth-similar conditions',
+                'kz': 'Жоғары ESI мәндері Жерге ұқсас жағдайларды болжайды'
+            },
+            'action': {
+                'en': 'Search for water vapor and oxygen signatures',
+                'kz': 'Су буы мен оттегі іздерін іздеңіз'
+            }
         })
     s = get_state()
     for cat_key, cat_data in CATALOGS.items():
         unscanned = [star for star in cat_data['stars'] if star not in s['scanned']]
         if unscanned:
             recs.append({
-                'title': f"🔭 Explore {cat_data['name']['en']}",
-                'reason': f"{len(unscanned)} unscanned targets remaining",
-                'action': f"Priority next: {unscanned[0]}"
+                'title': {
+                    'en': f"🔭 Explore {cat_data['name']['en']}",
+                    'kz': f"🔭 {cat_data['name']['kz']} зерттеу"
+                },
+                'reason': {
+                    'en': f"{len(unscanned)} unscanned targets remaining",
+                    'kz': f"{len(unscanned)} сканерленбеген нысан қалды"
+                },
+                'action': {
+                    'en': f"Priority next: {unscanned[0]}",
+                    'kz': f"Келесі кезекте: {unscanned[0]}"
+                }
             })
             break
     return recs[:5]
@@ -1065,22 +1127,53 @@ def generate_hypotheses():
     if hz_p:
         avg_r = sum(p['radius'] for p in hz_p) / len(hz_p)
         hyps.append({
-            'title': 'Habitable Zone Planet Sizes',
-            'hypothesis': f'HZ planets in this sample average {avg_r:.2f} R⊕',
-            'analysis': 'Suggests selection effects or physical constraints on habitability',
-            'evidence': f'Sample: {len(hz_p)} HZ planets',
-            'further_study': 'Expand sample with TESS and Kepler data'
+            'title': {
+                'en': 'Habitable Zone Planet Sizes',
+                'kz': 'Тіршілік аймағындағы планеталардың өлшемдері'
+            },
+            'hypothesis': {
+                'en': f'HZ planets in this sample average {avg_r:.2f} R⊕',
+                'kz': f'Осы үлгідегі тіршілік аймағындағы планеталардың орташа өлшемі {avg_r:.2f} R⊕'
+            },
+            'analysis': {
+                'en': 'Suggests physical constraints or selection effects on habitability',
+                'kz': 'Бұл мекендеуге жарамдылықтың физикалық шектеулерін немесе сұрыптау әсерін білдіреді'
+            },
+            'evidence': {
+                'en': f'Sample: {len(hz_p)} HZ planets',
+                'kz': f'Үлгі: {len(hz_p)} тіршілік аймағының планеталары'
+            },
+            'further_study': {
+                'en': 'Expand sample with TESS and Kepler data',
+                'kz': 'TESS және Kepler деректерімен үлгіні кеңейту'
+            }
         })
     temps = [p['temp'] for p in all_p]
     avg_t = sum(temps) / len(temps)
     hyps.append({
-        'title': 'Temperature Distribution',
-        'hypothesis': f'Average discovered planet temperature: {avg_t:.0f} K',
-        'analysis': 'Detection bias toward close-orbiting, hotter planets',
-        'evidence': f'Based on {len(all_p)} planetary observations',
-        'further_study': 'Long-baseline radial velocity for cooler planets'
+        'title': {
+            'en': 'Temperature Distribution',
+            'kz': 'Температураның таралуы'
+        },
+        'hypothesis': {
+            'en': f'Average discovered planet temperature: {avg_t:.0f} K',
+            'kz': f'Табылған планеталардың орташа температурасы: {avg_t:.0f} K'
+        },
+        'analysis': {
+            'en': 'Detection bias toward close-orbiting, hotter planets',
+            'kz': 'Орбитасы жақын, ыстық планеталарды анықтау мүмкіндігіның жоғары болуы (бақылау ауытқуы)'
+        },
+        'evidence': {
+            'en': f'Based on {len(all_p)} planetary observations',
+            'kz': f'Үлгі: {len(all_p)} планеталық бақылау негізінде'
+        },
+        'further_study': {
+            'en': 'Long-baseline radial velocity for cooler planets',
+            'kz': 'Салқынырақ планеталарды табу үшін ұзақ мерзімді радиалды жылдамдық әдісі'
+        }
     })
     return hyps[:4]
+
 
 # ── Star coordinates for 3D map ───────────────────────────────────────────────
 
@@ -1096,22 +1189,26 @@ def get_star_coords(hostname, distance=None):
 
 # ── Plotly chart data builders ────────────────────────────────────────────────
 
-def build_starmap_data(systems):
+def build_starmap_data(systems, lang='en'):
     traces = []
     # Sun
+    sun_hover = '<b>Sol</b><br>Distance: 0 ly<extra></extra>' if lang == 'en' else '<b>Күн</b><br>Қашықтық: 0 жж<extra></extra>'
     traces.append({
         'type': 'scatter3d', 'x': [0], 'y': [0], 'z': [0],
         'mode': 'markers+text',
         'marker': {'size': 14, 'color': '#FFD700', 'symbol': 'circle'},
-        'text': ['☀️ Sol'], 'textposition': 'top center',
+        'text': ['☀️ Sol' if lang == 'en' else '☀️ Күн'], 'textposition': 'top center',
         'textfont': {'size': 11, 'color': 'white'},
-        'name': 'Sun', 'hovertemplate': '<b>Sol</b><br>Distance: 0 ly<extra></extra>'
+        'name': 'Sun' if lang == 'en' else 'Күн', 'hovertemplate': sun_hover
     })
     for hostname, data in systems.items():
         x, y, z = get_star_coords(hostname, data.get('distance'))
         score = data['best_score']
         color = '#7cb97c' if score >= 70 else '#00d4ff' if score >= 50 else '#d4a574' if score >= 30 else '#e07878'
         size  = 6 + data['planet_count'] * 2
+        dist_lbl = 'Distance' if lang == 'en' else 'Қашықтық'
+        pl_lbl = 'Planets' if lang == 'en' else 'Планеталар'
+        best_lbl = 'Best' if lang == 'en' else 'Үздік ұпай'
         traces.append({
             'type': 'scatter3d', 'x': [x], 'y': [y], 'z': [z],
             'mode': 'markers+text',
@@ -1120,7 +1217,7 @@ def build_starmap_data(systems):
             'text': [hostname], 'textposition': 'top center',
             'textfont': {'size': 9, 'color': 'white'},
             'name': hostname,
-            'hovertemplate': f'<b>{hostname}</b><br>Distance: {data.get("distance", 0) or 0:.1f} ly<br>Planets: {data["planet_count"]}<br>Best: {score}/100<extra></extra>'
+            'hovertemplate': f'<b>{hostname}</b><br>{dist_lbl}: {data.get("distance", 0) or 0:.1f} ly<br>{pl_lbl}: {data["planet_count"]}<br>{best_lbl}: {score}/100<extra></extra>'
         })
     layout = {
         'scene': {
@@ -1135,7 +1232,7 @@ def build_starmap_data(systems):
     }
     return {'data': traces, 'layout': layout}
 
-def build_system_data(planets, star, selected_idx=0):
+def build_system_data(planets, star, selected_idx=0, lang='en'):
     traces = []
     teff = star.get('teff', 5778)
 
@@ -1170,12 +1267,23 @@ def build_system_data(planets, star, selected_idx=0):
         'showlegend': False, 'hoverinfo': 'skip'
     })
     # Star body
+    star_type_map = {
+        'Main Sequence': 'Басты тізбек',
+        'Red Dwarf': 'Қызыл ергежейлі',
+        'Orange Dwarf': 'Сарғыш ергежейлі',
+        'Yellow Dwarf': 'Сары ергежейлі',
+        'Blue Giant': 'Көк алып',
+        'Red Giant': 'Қызыл алып',
+        'White Dwarf': 'Ақ ергежейлі',
+    }
+    raw_star_type = star.get('type', 'Main Sequence')
+    star_type_translated = star_type_map.get(raw_star_type, raw_star_type) if lang == 'kz' else raw_star_type
     traces.append({
         'type': 'scatter3d', 'x': [0], 'y': [0], 'z': [0],
         'mode': 'markers',
         'marker': {'size': 20, 'color': star_color, 'opacity': 0.95, 'line': {'width': 1.5, 'color': 'white'}},
         'name': star.get('name', 'Star'),
-        'hovertemplate': f'<b>{star.get("name","Host Star")}</b><br>T: {teff} K<br>Type: {star.get("type","Main Sequence")}<extra></extra>'
+        'hovertemplate': f'<b>{star.get("name","Host Star")}</b><br>T: {teff} K<br>{("Type" if lang == "en" else "Түрі")}: {star_type_translated}<extra></extra>'
     })
 
     if planets:
@@ -1198,7 +1306,7 @@ def build_system_data(planets, star, selected_idx=0):
             'flatshading': True, 'showlegend': False, 'hoverinfo': 'skip',
             'lighting': {'ambient': 1, 'diffuse': 0, 'specular': 0},
         })
-        border_theta = theta + [theta[0]]
+        border_theta = border_theta = theta + [theta[0]]
         for r in (hz_inner, hz_outer):
             traces.append({'type': 'scatter3d',
                 'x': [r * math.cos(t) for t in border_theta],
@@ -1250,6 +1358,25 @@ def build_system_data(planets, star, selected_idx=0):
             'showlegend': False, 'hoverinfo': 'skip'})
 
         # Planet body
+        type_map = {
+            '🪨 Dwarf Planet': 'Ергежейлі планета',
+            '🔴 Sub-Earth': 'Суб-Жер',
+            '🌍 Terrestrial': 'Жер тәрізді',
+            '🌎 Super-Earth': 'Супер-Жер',
+            '💧 Mini-Neptune': 'Мини-Нептун',
+            '🔵 Ice Giant': 'Мұзды алып',
+            '🔥 Hot Jupiter': 'Ыстық Юпитер',
+            '🪐 Gas Giant': 'Газ алыбы',
+            '🟤 Super-Jupiter': 'Супер-Юпитер'
+        }
+        raw_p_type = p.get('type', '?')
+        p_type_translated = type_map.get(raw_p_type, raw_p_type) if lang == 'kz' else raw_p_type
+
+        type_lbl = 'Type' if lang == 'en' else 'Түрі'
+        orbit_lbl = 'Orbit' if lang == 'en' else 'Орбита'
+        score_lbl = 'Score' if lang == 'en' else 'Ұпай'
+        temp_lbl = 'Temp' if lang == 'en' else 'Температура'
+
         traces.append({
             'type': 'scatter3d', 'x': [px], 'y': [py], 'z': [pz],
             'mode': 'markers+text',
@@ -1260,10 +1387,10 @@ def build_system_data(planets, star, selected_idx=0):
             'textfont': {'size': 18}, 'name': p['name'],
             'hovertemplate': (
                 f'<b>{p["name"]}</b><br>'
-                f'Type: {p.get("type","?")}<br>'
-                f'Orbit: {orbit:.3f} AU<br>'
-                f'Score: {hab}/100<br>'
-                f'Temp: {p.get("temp","?")} K<br>'
+                f'{type_lbl}: {p_type_translated}<br>'
+                f'{orbit_lbl}: {orbit:.3f} AU<br>'
+                f'{score_lbl}: {hab}/100<br>'
+                f'{temp_lbl}: {p.get("temp","?")} K<br>'
                 f'ESI: {p.get("esi","?")}<extra></extra>'
             )
         })
@@ -1303,8 +1430,10 @@ def build_system_data(planets, star, selected_idx=0):
     }
     return {'data': traces, 'layout': layout}
 
-def build_radar_data(planets_dict):
+def build_radar_data(planets_dict, lang='en'):
     cats = ['ESI', 'Temperature', 'Size', 'Gravity', 'HZ Position']
+    if lang == 'kz':
+        cats = ['ESI', 'Температура', 'Өлшемі', 'Тартылыс күші', 'ТА орны']
     colors = ['#d4a574', '#7cb97c', '#00d4ff', '#e07878', '#a78bfa', '#fb923c']
     traces = []
     for idx, (name, data) in enumerate(planets_dict.items()):
@@ -1360,7 +1489,7 @@ def build_radar_data(planets_dict):
     }
     return {'data': traces, 'layout': layout}
 
-def build_bar_data(planets_dict):
+def build_bar_data(planets_dict, lang='en'):
     names  = list(planets_dict.keys())
     colors = ['#d4a574', '#7cb97c', '#00d4ff', '#e07878']
     
@@ -1402,9 +1531,9 @@ def build_bar_data(planets_dict):
 
     metrics = {
         'ESI':            esi_vals,
-        'Hab Score':      hab_vals,
-        'Gravity (norm)': grav_vals,
-        'Radius (norm)':  rad_vals,
+        'Hab Score' if lang == 'en' else 'Тіршілік ұпайы':      hab_vals,
+        'Gravity (norm)' if lang == 'en' else 'Тартылыс (норма)': grav_vals,
+        'Radius (norm)' if lang == 'en' else 'Радиус (норма)':  rad_vals,
     }
     traces = []
     for i, (metric, vals) in enumerate(metrics.items()):
@@ -1417,20 +1546,22 @@ def build_bar_data(planets_dict):
         'paper_bgcolor': 'rgba(0,0,0,0)', 'plot_bgcolor': 'rgba(0,0,0,0)',
         'xaxis': {'tickfont': {'color': 'white'}, 'gridcolor': 'rgba(255,255,255,0.08)'},
         'yaxis': {'tickfont': {'color': 'white'}, 'gridcolor': 'rgba(255,255,255,0.08)',
-                  'title': {'text': 'Normalized Value', 'font': {'color': 'rgba(255,255,255,0.6)'}}},
+                  'title': {'text': 'Normalized Value' if lang == 'en' else 'Нормаланған мән', 'font': {'color': 'rgba(255,255,255,0.6)'}}},
         'legend': {'font': {'color': 'white'}, 'bgcolor': 'rgba(0,0,0,0)'},
         'margin': {'l': 40, 'r': 20, 't': 30, 'b': 40}, 'height': 340,
         'font': {'color': 'white'}
     }
     return {'data': traces, 'layout': layout}
 
-def build_score_histogram(all_planets):
+def build_score_histogram(all_planets, lang='en'):
     scores = [p['hab_score'] for p in all_planets]
+    xaxis_title = 'Habitability Score' if lang == 'en' else 'Тіршілік ұпайы'
+    yaxis_title = 'Count' if lang == 'en' else 'Саны'
     layout = {
         'paper_bgcolor': 'rgba(0,0,0,0)', 'plot_bgcolor': 'rgba(0,0,0,0)',
-        'xaxis': {'title': {'text': 'Habitability Score', 'font': {'color': 'rgba(255,255,255,0.6)'}},
+        'xaxis': {'title': {'text': xaxis_title, 'font': {'color': 'rgba(255,255,255,0.6)'}},
                   'tickfont': {'color': 'white'}, 'gridcolor': 'rgba(255,255,255,0.08)', 'range': [0, 100]},
-        'yaxis': {'title': {'text': 'Count', 'font': {'color': 'rgba(255,255,255,0.6)'}},
+        'yaxis': {'title': {'text': yaxis_title, 'font': {'color': 'rgba(255,255,255,0.6)'}},
                   'tickfont': {'color': 'white'}, 'gridcolor': 'rgba(255,255,255,0.08)'},
         'margin': {'l': 40, 'r': 20, 't': 30, 'b': 40}, 'height': 280,
         'shapes': [
@@ -1720,11 +1851,18 @@ def analysis():
     has_data = bool(s['systems'])
     scores   = [p['hab_score'] for p in all_p]
 
+    high_count = sum(1 for p in all_p if p['hab_score'] >= 70)
+    mid_count  = sum(1 for p in all_p if 40 <= p['hab_score'] < 70)
+    low_count  = sum(1 for p in all_p if p['hab_score'] < 40)
+
     summary = {
         'total_systems':   len(s['systems']),
         'total_planets':   len(all_p),
         'habitable_count': sum(1 for p in all_p if p['in_hz']),
         'avg_score':       round(sum(scores) / len(scores), 1) if scores else 0,
+        'high_count':      high_count,
+        'mid_count':       mid_count,
+        'low_count':       low_count,
     }
 
     sorted_p   = sorted(all_p, key=lambda x: x['hab_score'], reverse=True)
@@ -1736,21 +1874,23 @@ def analysis():
     recs = []
     if has_data:
         for r in generate_recommendations():
-            priority = 'high' if '🎯' in r.get('title', '') else 'medium'
-            body = r.get('title', '') + ' — ' + r.get('action', '')
-            recs.append({'priority': priority, 'text': {'en': body, 'kz': body}})
+            priority = 'high' if '🎯' in r['title']['en'] else 'medium'
+            body_en = r['title']['en'] + ' — ' + r['action']['en']
+            body_kz = r['title']['kz'] + ' — ' + r['action']['kz']
+            recs.append({'priority': priority, 'text': {'en': body_en, 'kz': body_kz}})
 
     hyps = []
     if has_data:
         for h in generate_hypotheses():
-            desc = h.get('hypothesis', '') + ' ' + h.get('analysis', '')
+            desc_en = h['hypothesis']['en'] + ' ' + h['analysis']['en']
+            desc_kz = h['hypothesis']['kz'] + ' ' + h['analysis']['kz']
             hyps.append({
-                'title':       {'en': h.get('title', ''), 'kz': h.get('title', '')},
-                'description': {'en': desc, 'kz': desc},
+                'title':       h['title'],
+                'description': {'en': desc_en, 'kz': desc_kz},
                 'confidence':  0.75,
             })
 
-    score_hist_data = build_score_histogram(all_p) if all_p else {'data': [], 'layout': {}}
+    score_hist_data = build_score_histogram(all_p, lang) if all_p else {'data': [], 'layout': {}}
 
     return render_template('analysis.html', lang=lang,
         has_data=has_data,
@@ -1868,8 +2008,8 @@ def api_scan():
     s['selected_planet'] = 0
     s['log'].append({
         'time':   datetime.now().strftime('%H:%M:%S'),
-        'action': f'Scanned {star_name}',
-        'result': f'{len(planets)} planets found',
+        'action': {'en': f'Scanned {star_name}', 'kz': f'{star_name} сканерленді'},
+        'result': {'en': f'{len(planets)} planets found', 'kz': f'{len(planets)} планета табылды'},
         'score':  best_score,
     })
 
@@ -1929,31 +2069,38 @@ def api_catalogs():
 
 @app.route('/api/chart/starmap', methods=['POST'])
 def api_chart_starmap():
-    systems = get_state()['systems']
-    return jsonify(build_starmap_data(systems))
+    s = get_state()
+    lang = s.get('lang', 'en')
+    return jsonify(build_starmap_data(s.get('systems', {}), lang))
 
 @app.route('/api/chart/system', methods=['POST'])
 def api_chart_system():
-    data = request.get_json()
+    data = request.get_json() or {}
     s    = get_state()
     planets  = data.get('planets') or s.get('current_planets', [])
     star     = data.get('star')    or s.get('current_star', {})
     selected = data.get('selected_idx', s.get('selected_planet', 0))
-    return jsonify(build_system_data(planets, star, selected))
+    lang     = data.get('lang', s.get('lang', 'en'))
+    return jsonify(build_system_data(planets, star, selected, lang))
 
 @app.route('/api/chart/compare', methods=['POST'])
 def api_chart_compare():
-    data         = request.get_json()
+    data         = request.get_json() or {}
     planets_dict = data.get('planets', {})
     chart_type   = data.get('type', 'radar')
+    s            = get_state()
+    lang         = data.get('lang', s.get('lang', 'en'))
     if chart_type == 'bar':
-        return jsonify(build_bar_data(planets_dict))
-    return jsonify(build_radar_data(planets_dict))
+        return jsonify(build_bar_data(planets_dict, lang))
+    return jsonify(build_radar_data(planets_dict, lang))
 
 @app.route('/api/chart/scores', methods=['POST'])
 def api_chart_scores():
     all_p = get_all_planets()
-    return jsonify(build_score_histogram(all_p))
+    s     = get_state()
+    lang  = s.get('lang', 'en')
+    return jsonify(build_score_histogram(all_p, lang))
+
 
 @app.route('/api/analysis', methods=['POST'])
 def api_analysis():
@@ -2050,13 +2197,25 @@ def generate_fallback_analysis(all_p, state, lang):
     avg_temp = sum(p['temp'] for p in all_p) / total if total else 0
 
     if lang == 'kz':
+        type_map = {
+            '🪨 Dwarf Planet': 'Ергежейлі планета',
+            '🔴 Sub-Earth': 'Суб-Жер',
+            '🌍 Terrestrial': 'Жер тәрізді',
+            '🌎 Super-Earth': 'Супер-Жер',
+            '💧 Mini-Neptune': 'Мини-Нептун',
+            '🔵 Ice Giant': 'Мұзды алып',
+            '🔥 Hot Jupiter': 'Ыстық Юпитер',
+            '🪐 Gas Giant': 'Газ алыбы',
+            '🟤 Super-Jupiter': 'Супер-Юпитер'
+        }
+        best_type_kz = type_map.get(best['type'], best['type']) if best else ''
         intro = (f"ATLAS барлаулық жүйесі {systems} жұлдыз жүйесін сканерлеп, "
                  f"жалпы {total} планетаны каталогтады.")
         hz_part = (f"{len(hz_p)} планета тіршілік аймағында орналасқан, "
                    f"бұл жалпы үлгінің {len(hz_p)/total*100:.1f}%-ын құрайды." if hz_p else
                    "Ешбір планета тіршілік аймағына сәйкес келмеді.")
         best_part = (f"Ең жоғары тіршілік ұпайы: {best['name']} — {best['hab_score']}/100 "
-                     f"(ESI: {best['esi']:.2f}, температура: {best['temp']:.0f} K, тип: {best['type']})." if best else "")
+                     f"(ESI: {best['esi']:.2f}, температура: {best['temp']:.0f} K, тип: {best_type_kz})." if best else "")
         climate = (f"Барлық планеталардың орташа температурасы {avg_temp:.0f} K, "
                    f"орташа ESI индексі {avg_esi:.3f} құрайды.")
         conclusion = ("Жинақталған деректер детальды атмосфералық спектроскопия "
@@ -2129,6 +2288,7 @@ def api_ask_gemini():
     context  = body.get('context', '').strip()[:300]
     lang     = body.get('lang', 'en')
     mode     = body.get('mode', 'default')  # 'encyclopedia' | 'travel' | 'default'
+    topic_id = body.get('topic_id')
     if not question:
         return jsonify({'error': 'no_question'}), 400
 
@@ -2155,9 +2315,16 @@ def api_ask_gemini():
 
     prompt = question if not context else f'{question}\n\nContext: {context}'
     contents = [{'role': 'user', 'parts': [{'text': prompt}]}]
-    result = call_gemini(contents, system, max_tokens=max_tok)
-    if result:
-        return jsonify({'text': result, 'source': 'gemini'})
+    
+    if _get_key():
+        result = call_gemini(contents, system, max_tokens=max_tok)
+        if result:
+            return jsonify({'text': result, 'source': 'gemini'})
+
+    if mode == 'encyclopedia' and topic_id in ENCYCLOPEDIA_FALLBACKS:
+        fb_text = ENCYCLOPEDIA_FALLBACKS[topic_id].get(lang, ENCYCLOPEDIA_FALLBACKS[topic_id]['en'])
+        return jsonify({'text': fb_text, 'source': 'fallback'})
+
     return jsonify({'text': '', 'source': 'fallback'})
 
 
@@ -2211,25 +2378,67 @@ def api_space_fact():
     return jsonify({'text': 'No fact available.', 'source': 'fallback'})
 
 
+def get_catalog_hint_fallback(star, lang):
+    star_l = star.lower().strip()
+    if 'proxima' in star_l:
+        return {
+            'en': "Proxima Centauri is the closest star to our Sun (4.24 ly) and hosts Proxima b, an Earth-sized planet in the habitable zone. However, its host is a red dwarf known for powerful stellar flares.",
+            'kz': "Проксима Кентавр — Күнге ең жақын жұлдыз (4.24 жж) &mdash; өз тіршілік аймағында Жер мөлшеріндей Proxima b планетасын иеленеді. Дегенмен, оның жұлдызы қызыл ергежейлі болып табылады."
+        }.get(lang, "")
+    elif 'trappist-1' in star_l or 'trappist 1' in star_l:
+        return {
+            'en': "TRAPPIST-1 is a legendary ultra-cool dwarf star hosting seven rocky, Earth-sized planets, three of which reside within the habitable zone (TRAPPIST-1e, f, g). It is a key target for JWST spectroscopy.",
+            'kz': "TRAPPIST-1 — жеті тасты Жер мөлшеріндей планетасы бар қызыл ергежейлі жұлдыз, олардың үшеуі тіршілік аймағында орналасқан (TRAPPIST-1e, f, g). Бұл JWST үшін маңызды нысан."
+        }.get(lang, "")
+    elif 'lhs 1140' in star_l:
+        return {
+            'en': "LHS 1140 hosts LHS 1140b, a highly promising temperate super-Earth. Recent observations suggest it could be a water world or a Hycean planet covered in liquid oceans under a nitrogen-rich atmosphere.",
+            'kz': "LHS 1140 жұлдызы мекендеуге өте қолайлы LHS 1140b супер-Жерін иеленеді. Соңғы зерттеулер оның азотқа бай атмосферасы және сұйық мұхиты бар су әлемі болуы мүмкін екенін көрсетеді."
+        }.get(lang, "")
+    elif 'kepler-442' in star_l:
+        return {
+            'en': "Kepler-442 hosts Kepler-442b, a super-Earth with an exceptionally high Earth Similarity Index (0.84). It orbits inside the habitable zone of a stable K-type orange dwarf.",
+            'kz': "Kepler-442 жұлдызы Жерге ұқсастық индексі өте жоғары (0.84) Kepler-442b супер-Жерін иеленеді. Ол тұрақты K-типті қызғылт ергежейлі жұлдыздың тіршілік аймағында айналады."
+        }.get(lang, "")
+    elif 'k2-18' in star_l:
+        return {
+            'en': "K2-18 is famous for K2-18b, a Hycean candidate planet where JWST detected carbon dioxide, methane, and potential signs of ocean water vapor. It lies 124 light-years away in the Leo constellation.",
+            'kz': "K2-18 жұлдызы K2-18b планетасымен әйгілі. JWST оның атмосферасында көмірқышқыл газын, метанды және су буын анықтады. Ол Лев шоқжұлдызында 124 жарық жылы қашықтықта орналасқан."
+        }.get(lang, "")
+    elif 'toi-700' in star_l:
+        return {
+            'en': "TOI-700 is a quiet red dwarf hosting two Earth-sized planets in its habitable zone (TOI-700d and TOI-700e). Lacking violent flares, it is one of the most stable red dwarf systems discovered.",
+            'kz': "TOI-700 — өз тіршілік аймағында екі бірдей Жер мөлшеріндегі планетаны (TOI-700d және TOI-700e) иеленетін тыныш қызыл ергежейлі. Бұл белгілі ең тұрақты жүйелердің бірі."
+        }.get(lang, "")
+    else:
+        return {
+            'en': f"{star} is a key target in our stellar catalog. Scanning this system allows ATLAS to catalog its orbital architecture, search for temperate rocky candidates, and calculate habitability scores.",
+            'kz': f"{star} — жұлдыздық каталогымыздағы маңызды нысан. Бұл жүйені сканерлеу ATLAS-қа оның орбиталық құрылымын талдауға және тіршілік ұпайларын есептеуге мүмкіндік береді."
+        }.get(lang, "")
+
+
 @app.route('/api/catalog_hint', methods=['POST'])
 def api_catalog_hint():
     """Короткая подсказка почему стоит сканировать выбранную звезду."""
     body   = request.get_json(force=True) or {}
-    star   = body.get('star', '')
+    star   = body.get('star', '').strip()
     lang   = body.get('lang', 'en')
     if not star:
         return jsonify({'error': 'no_star'}), 400
 
-    lang_note = 'Жауапты қазақ тілінде жаз.' if lang == 'kz' else 'Reply in English.'
-    system = (
-        f'You are ATLAS. Give a 1-2 sentence scientific reason why {star} '
-        f'is an interesting target for exoplanet habitability research. Be specific. {lang_note}'
-    )
-    contents = [{'role': 'user', 'parts': [{'text': f'Why is {star} worth scanning for habitable planets?'}]}]
-    result = call_gemini(contents, system, max_tokens=512)
-    if result:
-        return jsonify({'text': result, 'source': 'gemini'})
-    return jsonify({'text': '', 'source': 'fallback'})
+    if _get_key():
+        lang_note = 'Жауапты қазақ тілінде жаз.' if lang == 'kz' else 'Reply in English.'
+        system = (
+            f'You are ATLAS. Give a 1-2 sentence scientific reason why {star} '
+            f'is an interesting target for exoplanet habitability research. Be specific. {lang_note}'
+        )
+        contents = [{'role': 'user', 'parts': [{'text': f'Why is {star} worth scanning for habitable planets?'}]}]
+        result = call_gemini(contents, system, max_tokens=512)
+        if result:
+            return jsonify({'text': result, 'source': 'gemini'})
+
+    fb = get_catalog_hint_fallback(star, lang)
+    return jsonify({'text': fb, 'source': 'fallback'})
 
 
 @app.route('/api/generate_share', methods=['POST'])
