@@ -1641,45 +1641,77 @@ def save_gemini_cache():
         print(f'[Gemini Cache] Failed to save: {e}', flush=True)
 
 def call_gemini(contents, system_text, max_tokens=350):
-    """Gemini API via HTTP — ?key= URL param (per Google docs)."""
-    key = _get_key()
-    if not key:
-        print('[Gemini] ERROR: GEMINI_API_KEY not set in environment', flush=True)
-        return None
+    """Gemini API via HTTP, with auto-fallback to Groq if Gemini key fails/exhausted."""
+    gemini_key = _get_key()
 
-    last_msg = contents[-1]['parts'][0]['text'] if contents else ''
-    # Unique composite key using system instructions and full prompt
-    cache_key = f"{system_text}||{last_msg}"
-    if cache_key in _gemini_cache:
-        print('[Gemini] Cache hit! Returning cached response.', flush=True)
-        return _gemini_cache[cache_key]
+    if gemini_key:
+        last_msg = contents[-1]['parts'][0]['text'] if contents else ''
+        cache_key = f"{system_text}||{last_msg}"
+        if cache_key in _gemini_cache:
+            print('[Gemini] Cache hit! Returning cached response.', flush=True)
+            return _gemini_cache[cache_key]
 
-    msgs = [
-        {'role': 'user' if c['role'] == 'user' else 'model',
-         'parts': [{'text': c['parts'][0]['text']}]}
-        for c in contents
-    ]
-    body = {
-        'system_instruction': {'parts': [{'text': system_text}]},
-        'contents': msgs,
-        'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7, 'topP': 0.9}
-    }
-    for model in GEMINI_MODELS:
-        url = f'{GEMINI_BASE}{model}:generateContent?key={key}'
-        try:
-            r = requests.post(url, json=body,
-                              headers={'Content-Type': 'application/json'}, timeout=20)
-            if r.ok:
-                cands = r.json().get('candidates', [])
-                if cands:
-                    text = cands[0]['content']['parts'][0].get('text', '').strip()
-                    _gemini_cache[cache_key] = text
-                    save_gemini_cache()
-                    print(f'[Gemini] OK via {model} (Cached & Saved)', flush=True)
-                    return text
-            print(f'[Gemini] {model} → {r.status_code}: {r.text[:200]}', flush=True)
-        except Exception as e:
-            print(f'[Gemini] {model} → {e}', flush=True)
+        msgs = [
+            {'role': 'user' if c['role'] == 'user' else 'model',
+             'parts': [{'text': c['parts'][0]['text']}]}
+            for c in contents
+        ]
+        body = {
+            'system_instruction': {'parts': [{'text': system_text}]},
+            'contents': msgs,
+            'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7, 'topP': 0.9}
+        }
+        for model in GEMINI_MODELS:
+            url = f'{GEMINI_BASE}{model}:generateContent?key={gemini_key}'
+            try:
+                r = requests.post(url, json=body,
+                                  headers={'Content-Type': 'application/json'}, timeout=20)
+                if r.ok:
+                    cands = r.json().get('candidates', [])
+                    if cands:
+                        text = cands[0]['content']['parts'][0].get('text', '').strip()
+                        _gemini_cache[cache_key] = text
+                        save_gemini_cache()
+                        print(f'[Gemini] OK via {model} (Cached & Saved)', flush=True)
+                        return text
+                print(f'[Gemini] {model} → {r.status_code}: {r.text[:200]}', flush=True)
+            except Exception as e:
+                print(f'[Gemini] {model} → {e}', flush=True)
+
+    # Groq fallback
+    groq_key = os.environ.get('GROQ_API_KEY', '').strip()
+    if groq_key:
+        print('[AI Fallback] Attempting Groq API...', flush=True)
+        # Format messages for OpenAI/Groq format
+        messages = [{"role": "system", "content": system_text}]
+        for c in contents:
+            role = 'assistant' if c['role'] in ('model', 'assistant') else 'user'
+            text = c['parts'][0]['text']
+            messages.append({"role": role, "content": text})
+
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {groq_key}",
+            "Content-Type": "application/json"
+        }
+        # We try active Groq models in order
+        groq_models = ["llama-3.3-70b-versatile", "llama3-70b-8192", "gemma2-9b-it"]
+        for model in groq_models:
+            body = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": 0.7
+            }
+            try:
+                r = requests.post(url, json=body, headers=headers, timeout=20)
+                if r.ok:
+                    res_text = r.json()['choices'][0]['message']['content'].strip()
+                    print(f'[Groq] OK via {model}', flush=True)
+                    return res_text
+                print(f'[Groq] {model} → {r.status_code}: {r.text[:200]}', flush=True)
+            except Exception as e:
+                print(f'[Groq] {model} → {e}', flush=True)
 
     return None
 
